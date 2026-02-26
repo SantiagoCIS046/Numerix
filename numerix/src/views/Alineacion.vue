@@ -1,0 +1,689 @@
+<script setup>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
+const formData = ref({
+  fullName: '',
+  birthDate: '',
+  birthTime: '',
+  path: 'solar', // 'solar' | 'lunar'
+  auraDensity: 'fluida', // 'eterea' | 'fluida' | 'cristalina' | 'nebulosa'
+  cosmicVision: ''
+})
+
+const auraOptions = [
+  { id: 'eterea', label: 'ETÉREA', icon: '☁️' },
+  { id: 'fluida', label: 'FLUIDA', icon: '🌊' },
+  { id: 'cristalina', label: 'CRISTALINA', icon: '💎' },
+  { id: 'nebulosa', label: 'NEBULOSA', icon: '🌫️' }
+]
+
+function handleSubmit() {
+  console.log('Alineación iniciada:', formData.value)
+  // Logic to save or navigate
+  router.push('/home')
+}
+
+function resetForm() {
+  formData.value = {
+    fullName: '',
+    birthDate: '',
+    birthTime: '',
+    path: 'solar',
+    auraDensity: 'fluida',
+    cosmicVision: ''
+  }
+}
+
+function goBack() {
+  router.push('/home')
+}
+</script>
+
+<template>
+  <div class="alignment-page">
+    <div class="stars-bg"></div>
+    <div class="radial-glow"></div>
+
+    <!-- UI HEADERS -->
+    <header class="alignment-header">
+      <div class="header-left">
+        <div class="logo-circle">
+          <span class="logo-icon">✨</span>
+        </div>
+        <div class="brand-info">
+          <h1 class="brand-title">ALINEACIÓN DE ALMA</h1>
+          <p class="brand-subtitle">SECUENCIA DE CALIBRACIÓN CÓSMICA</p>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="coord-item">LAT: 34.5522° N</div>
+        <div class="coord-item">LONG: 118.2437° W</div>
+        <div class="coord-item">ÉPOCA: J2000.0</div>
+      </div>
+    </header>
+
+    <!-- PROGRESS BAR -->
+    <div class="progress-container">
+      <span class="progress-label left">PROGRESO_ESTELAR</span>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: 75%"></div>
+        <div class="progress-thumb" style="left: 75%"></div>
+      </div>
+      <span class="progress-label right">CALIBRACIÓN_ACTIVA</span>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <main class="alignment-content">
+      <div class="form-title-group">
+        <h2 class="main-title">INGRESA TUS COORDENADAS CELESTIALES</h2>
+        <p class="main-subtitle">Para alinear tu espíritu con los movimientos astrales, debemos mapear tu posición única en la línea de tiempo universal.</p>
+      </div>
+
+      <div class="alignment-card">
+        <form @submit.prevent="handleSubmit" class="cosmic-form">
+          
+          <!-- NAME, DATE, TIME -->
+          <div class="input-section grid-3">
+            <div class="form-group full-width">
+              <label>NOMBRE COMPLETO</label>
+              <input 
+                type="text" 
+                v-model="formData.fullName" 
+                placeholder="Tu nombre ante el cosmos"
+                class="cosmic-input"
+              />
+            </div>
+            
+            <div class="form-group">
+              <label>FECHA DE NACIMIENTO</label>
+              <div class="input-with-icon">
+                <input type="date" v-model="formData.birthDate" class="cosmic-input date-input" />
+                <span class="input-icon">📅</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>HORA DE NACIMIENTO</label>
+              <div class="input-with-icon">
+                <input type="time" v-model="formData.birthTime" class="cosmic-input time-input" />
+                <span class="input-icon">🕒</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION I: PATH -->
+          <div class="form-section">
+            <h3 class="section-num">I. <span class="section-text">¿Hacia qué camino celestial gravita tu espíritu naturalmente?</span></h3>
+            <div class="path-toggle">
+              <button 
+                type="button"
+                :class="['path-btn', { active: formData.path === 'solar' }]"
+                @click="formData.path = 'solar'"
+              >
+                <span class="path-label">CAMINO SOLAR DE LA CREACIÓN</span>
+                <span class="path-icon">⚙️</span>
+              </button>
+              <button 
+                type="button"
+                :class="['path-btn', { active: formData.path === 'lunar' }]"
+                @click="formData.path = 'lunar'"
+              >
+                <span class="path-label">CAMINO LUNAR DE LA REFLEXIÓN</span>
+                <span class="path-icon">🌙</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- SECTION II: AURA -->
+          <div class="form-section">
+            <h3 class="section-num">II. <span class="section-text">Define la densidad actual del aura de tu alma</span></h3>
+            <div class="aura-grid">
+              <div 
+                v-for="option in auraOptions" 
+                :key="option.id"
+                :class="['aura-card', { active: formData.auraDensity === option.id }]"
+                @click="formData.auraDensity = option.id"
+              >
+                <div class="aura-icon-box">
+                  <span class="aura-icon">{{ option.icon }}</span>
+                </div>
+                <span class="aura-label">{{ option.label }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION III: VISION -->
+          <div class="form-section">
+            <h3 class="section-num">III. <span class="section-text">Describe tu visión de la convergencia cósmica definitiva.</span></h3>
+            <div class="textarea-container">
+              <textarea 
+                v-model="formData.cosmicVision" 
+                placeholder="Susurra tus intenciones al campo de estrellas..."
+                class="cosmic-textarea"
+              ></textarea>
+              <div class="corner-accent"></div>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- FOOTER ACTIONS -->
+      <footer class="alignment-footer">
+        <div class="status-msg">PERÍODO DE CONVERGENCIA: <span>BUS LISTO</span></div>
+        
+        <button class="btn-primary-stellar" @click="handleSubmit">
+          <span class="btn-text">ALINEAR CON LAS ESTRELLAS</span>
+          <span class="btn-star-icon">★</span>
+        </button>
+
+        <button class="btn-reset" @click="resetForm">
+          <span class="reset-icon">↺</span> REINICIAR PROTOCOLO DE ALINEACIÓN
+        </button>
+      </footer>
+    </main>
+
+    <!-- SITE FOOTER -->
+    <footer class="site-nav-footer">
+      <div class="nav-links">
+        <a href="#">REGISTRO ASTRAL V4.0</a>
+        <a href="#">COOPERACIÓN ESTELAR</a>
+      </div>
+      <div class="nav-links">
+        <a href="#">CARTAS ESTELARES</a>
+        <a href="#">PRIVACIDAD CELESTIAL</a>
+        <a href="#">CONTACTAR AL ORÁCULO</a>
+      </div>
+    </footer>
+  </div>
+</template>
+
+<style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Outfit:wght@300;400;600&display=swap');
+
+.alignment-page {
+  min-height: 100vh;
+  background-color: #050508;
+  color: #fff;
+  font-family: 'Outfit', sans-serif;
+  position: relative;
+  overflow-x: hidden;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stars-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(1px 1px at 20px 30px, #fff, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 40px 70px, #fff, rgba(0,0,0,0)),
+    radial-gradient(2px 2px at 50px 160px, #fff, rgba(0,0,0,0)),
+    radial-gradient(2px 2px at 90px 40px, #fff, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 130px 80px, #fff, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 160px 120px, #fff, rgba(0,0,0,0));
+  background-repeat: repeat;
+  background-size: 200px 200px;
+  opacity: 0.3;
+  z-index: 0;
+}
+
+.radial-glow {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at center, rgba(30, 45, 90, 0.4) 0%, transparent 70%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* HEADER */
+.alignment-header {
+  width: 100%;
+  max-width: 1400px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 2;
+  margin-bottom: 3rem;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.logo-circle {
+  width: 50px;
+  height: 50px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.logo-circle::after {
+  content: '';
+  position: absolute;
+  width: 120%;
+  height: 120%;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+}
+
+.logo-icon {
+  font-size: 1.5rem;
+}
+
+.brand-title {
+  font-family: 'Cinzel', serif;
+  font-size: 1.8rem;
+  letter-spacing: 4px;
+  margin: 0;
+}
+
+.brand-subtitle {
+  font-size: 0.7rem;
+  letter-spacing: 3px;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0.2rem 0 0;
+}
+
+.header-right {
+  display: flex;
+  gap: 2rem;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 1px;
+}
+
+/* PROGRESS */
+.progress-container {
+  width: 100%;
+  max-width: 800px;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  margin-bottom: 5rem;
+  z-index: 2;
+}
+
+.progress-label {
+  font-size: 0.6rem;
+  letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.progress-bar {
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  position: relative;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, transparent, #fff);
+  position: absolute;
+}
+
+.progress-thumb {
+  width: 8px;
+  height: 8px;
+  background: #fff;
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 15px #fff;
+}
+
+/* CONTENT */
+.alignment-content {
+  width: 100%;
+  max-width: 900px;
+  z-index: 2;
+  text-align: center;
+}
+
+.form-title-group {
+  margin-bottom: 4rem;
+}
+
+.main-title {
+  font-family: 'Cinzel', serif;
+  font-size: 3rem;
+  letter-spacing: 2px;
+  margin-bottom: 1.5rem;
+}
+
+.main-subtitle {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.6);
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.alignment-card {
+  background: rgba(15, 20, 35, 0.4);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 40px;
+  padding: 4rem;
+  margin-bottom: 3rem;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+
+.cosmic-form {
+  display: flex;
+  flex-direction: column;
+  gap: 4rem;
+  text-align: left;
+}
+
+/* FORM GROUPS */
+.form-group label {
+  display: block;
+  font-size: 0.65rem;
+  letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 1rem;
+}
+
+.cosmic-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 1.2rem 1.5rem;
+  color: #fff;
+  font-size: 1rem;
+  transition: all 0.3s;
+}
+
+.cosmic-input:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 2rem;
+}
+
+.full-width {
+  grid-column: span 1;
+}
+
+.input-with-icon {
+  position: relative;
+}
+
+.input-icon {
+  position: absolute;
+  right: 1.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0.5;
+}
+
+/* SECTIONS */
+.section-num {
+  font-size: 1.2rem;
+  font-family: 'Cinzel', serif;
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.section-text {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* PATH TOGGLE */
+.path-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.path-btn {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1.5rem;
+  color: rgba(255, 255, 255, 0.4);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+}
+
+.path-btn.active {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+
+/* AURA GRID */
+.aura-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+}
+
+.aura-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 2.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.aura-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-5px);
+}
+
+.aura-card.active {
+  border-color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.aura-icon-box {
+  font-size: 2rem;
+  opacity: 0.5;
+}
+
+.aura-card.active .aura-icon-box {
+  opacity: 1;
+}
+
+.aura-label {
+  font-size: 0.6rem;
+  letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.aura-card.active .aura-label {
+  color: #fff;
+}
+
+/* TEXTAREA */
+.textarea-container {
+  position: relative;
+}
+
+.cosmic-textarea {
+  width: 100%;
+  min-height: 180px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 1.5rem;
+  color: #fff;
+  font-family: inherit;
+  font-size: 1rem;
+  resize: none;
+}
+
+.corner-accent {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 40px;
+  height: 40px;
+  border-right: 1px solid rgba(255, 255, 255, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  border-bottom-right-radius: 12px;
+}
+
+/* FOOTER ACTIONS */
+.alignment-footer {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3rem;
+}
+
+.status-msg {
+  font-size: 0.7rem;
+  letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.3);
+  text-transform: uppercase;
+}
+
+.status-msg span {
+  color: rgba(255, 255, 255, 0.6);
+  margin-left: 0.5rem;
+}
+
+.btn-primary-stellar {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 100px;
+  padding: 1.2rem 4rem;
+  color: #fff;
+  font-family: 'Outfit', sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: 4px;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  cursor: pointer;
+  transition: all 0.4s;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary-stellar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  opacity: 0;
+  transition: 0.4s;
+}
+
+.btn-primary-stellar:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
+}
+
+.btn-primary-stellar:hover::before {
+  opacity: 1;
+}
+
+.btn-star-icon {
+  font-size: 1.2rem;
+}
+
+.btn-reset {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.65rem;
+  letter-spacing: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-reset:hover {
+  color: #fff;
+}
+
+/* SITE FOOTER */
+.site-nav-footer {
+  width: 100%;
+  max-width: 1400px;
+  margin-top: 8rem;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: space-between;
+  z-index: 2;
+}
+
+.nav-links {
+  display: flex;
+  gap: 3rem;
+}
+
+.nav-links a {
+  color: rgba(255, 255, 255, 0.3);
+  text-decoration: none;
+  font-size: 0.65rem;
+  letter-spacing: 1px;
+  transition: 0.3s;
+}
+
+.nav-links a:hover {
+  color: #fff;
+}
+
+@media (max-width: 900px) {
+  .grid-3 { grid-template-columns: 1fr; }
+  .aura-grid { grid-template-columns: 1fr 1fr; }
+  .path-toggle { grid-template-columns: 1fr; }
+  .alignment-header { flex-direction: column; gap: 2rem; text-align: center; }
+  .header-left { flex-direction: column; }
+  .main-title { font-size: 2rem; }
+  .alignment-card { padding: 2rem; }
+}
+</style>

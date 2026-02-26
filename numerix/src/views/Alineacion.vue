@@ -1,44 +1,77 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
+
+// Pre-fill name from logged-in user
+const storedUser = localStorage.getItem('user')
+const loggedUser = storedUser ? JSON.parse(storedUser) : null
+
 const formData = ref({
-  fullName: '',
+  fullName: loggedUser?.name || loggedUser?.nombre || '',
   birthDate: '',
-  birthTime: '',
-  path: 'solar', // 'solar' | 'lunar'
-  auraDensity: 'fluida', // 'eterea' | 'fluida' | 'cristalina' | 'nebulosa'
+  birthTime: '',       // optional
+  path: 'solar',       // 'solar' | 'lunar'
+  auraDensity: 'fluida',
   cosmicVision: ''
 })
 
 const auraOptions = [
-  { id: 'eterea', label: 'ETÉREA', icon: '☁️' },
-  { id: 'fluida', label: 'FLUIDA', icon: '🌊' },
-  { id: 'cristalina', label: 'CRISTALINA', icon: '💎' },
-  { id: 'nebulosa', label: 'NEBULOSA', icon: '🌫️' }
+  { id: 'eterea',    label: 'ETÉREA',     icon: '☁️' },
+  { id: 'fluida',    label: 'FLUIDA',     icon: '🌊' },
+  { id: 'cristalina',label: 'CRISTALINA', icon: '💎' },
+  { id: 'nebulosa',  label: 'NEBULOSA',   icon: '🌫️' }
 ]
 
+const errorMsg = ref('')
+
+// Dynamic status based on completion
+const formStatus = computed(() => {
+  const d = formData.value
+  if (!d.fullName || !d.birthDate) return 'DATOS INCOMPLETOS'
+  if (!d.cosmicVision) return 'CALIBRACIÓN EN PROGRESO'
+  return 'CALIBRACIÓN COMPLETA'
+})
+
+const statusClass = computed(() => ({
+  'status-complete': formStatus.value === 'CALIBRACIÓN COMPLETA',
+  'status-progress': formStatus.value === 'CALIBRACIÓN EN PROGRESO',
+  'status-incomplete': formStatus.value === 'DATOS INCOMPLETOS',
+}))
+
 function handleSubmit() {
-  console.log('Alineación iniciada:', formData.value)
-  // Logic to save or navigate
+  errorMsg.value = ''
+
+  if (!formData.value.fullName) {
+    errorMsg.value = 'Por favor ingresa tu nombre completo.'
+    return
+  }
+  if (!formData.value.birthDate) {
+    errorMsg.value = 'La fecha de nacimiento es requerida.'
+    return
+  }
+
+  // Save alignment profile to localStorage
+  localStorage.setItem('alignmentProfile', JSON.stringify({
+    ...formData.value,
+    savedAt: new Date().toISOString()
+  }))
+
   router.push('/home')
 }
 
 function resetForm() {
   formData.value = {
-    fullName: '',
+    fullName: loggedUser?.name || loggedUser?.nombre || '',
     birthDate: '',
     birthTime: '',
     path: 'solar',
     auraDensity: 'fluida',
     cosmicVision: ''
   }
-}
-
-function goBack() {
-  router.push('/home')
+  errorMsg.value = ''
 }
 </script>
 
@@ -89,30 +122,39 @@ function goBack() {
           <div class="input-section grid-3">
             <div class="form-group full-width">
               <label>NOMBRE COMPLETO</label>
-              <input 
-                type="text" 
-                v-model="formData.fullName" 
+              <input
+                type="text"
+                v-model="formData.fullName"
                 placeholder="Tu nombre ante el cosmos"
                 class="cosmic-input"
               />
             </div>
-            
+
             <div class="form-group">
-              <label>FECHA DE NACIMIENTO</label>
+              <label class="field-label">FECHA DE NACIMIENTO</label>
               <div class="input-with-icon">
-                <input type="date" v-model="formData.birthDate" class="cosmic-input date-input" />
-                <span class="input-icon">📅</span>
+                <input
+                  id="birthDate"
+                  type="date"
+                  v-model="formData.birthDate"
+                  class="cosmic-input date-input"
+                />
               </div>
             </div>
 
             <div class="form-group">
-              <label>HORA DE NACIMIENTO</label>
+              <label class="field-label">HORA DE NACIMIENTO <span class="optional-tag">(OPCIONAL)</span></label>
               <div class="input-with-icon">
-                <input type="time" v-model="formData.birthTime" class="cosmic-input time-input" />
-                <span class="input-icon">🕒</span>
+                <input
+                  id="birthTime"
+                  type="time"
+                  v-model="formData.birthTime"
+                  class="cosmic-input time-input"
+                />
               </div>
             </div>
           </div>
+
 
           <!-- SECTION I: PATH -->
           <div class="form-section">
@@ -172,8 +214,10 @@ function goBack() {
 
       <!-- FOOTER ACTIONS -->
       <footer class="alignment-footer">
-        <div class="status-msg">PERÍODO DE CONVERGENCIA: <span>BUS LISTO</span></div>
-        
+        <div class="status-msg">ESTADO: <span :class="statusClass">{{ formStatus }}</span></div>
+
+        <div v-if="errorMsg" class="error-msg">⚠ {{ errorMsg }}</div>
+
         <button class="btn-primary-stellar" @click="handleSubmit">
           <span class="btn-text">ALINEAR CON LAS ESTRELLAS</span>
           <span class="btn-star-icon">★</span>
@@ -409,9 +453,9 @@ function goBack() {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
-  padding: 1.2rem 1.5rem;
+  padding: 0.75rem 1.2rem;
   color: #fff;
-  font-size: 1rem;
+  font-size: 0.95rem;
   transition: all 0.3s;
 }
 
@@ -421,10 +465,25 @@ function goBack() {
   background: rgba(255, 255, 255, 0.05);
 }
 
+/* Normalize date and time inputs to match text inputs */
+.date-input,
+.time-input {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.95rem;
+  min-height: 2.8rem;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+}
+
 .grid-3 {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr;
   gap: 2rem;
+  align-items: end;
 }
 
 .full-width {
@@ -433,14 +492,48 @@ function goBack() {
 
 .input-with-icon {
   position: relative;
+  display: flex;
+  align-items: center;
 }
 
-.input-icon {
+.input-icon-btn {
   position: absolute;
-  right: 1.5rem;
-  top: 50%;
-  transform: translateY(-50%);
-  opacity: 0.5;
+  right: 1rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  opacity: 0.6;
+  transition: opacity 0.2s, transform 0.2s;
+  padding: 0.25rem;
+  z-index: 2;
+  line-height: 1;
+}
+
+.input-icon-btn:hover {
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+/* Style native browser date/time picker icons to match dark theme */
+input[type="date"],
+input[type="time"] {
+  cursor: pointer;
+  color-scheme: dark;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(0.7);
+  cursor: pointer;
+  padding: 0.3rem;
+  border-radius: 4px;
+  transition: filter 0.2s;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="time"]::-webkit-calendar-picker-indicator:hover {
+  filter: invert(1) brightness(1);
 }
 
 /* SECTIONS */
@@ -677,13 +770,48 @@ function goBack() {
   color: #fff;
 }
 
+.optional-tag {
+  font-size: 0.55rem;
+  color: rgba(255, 255, 255, 0.3);
+  letter-spacing: 1px;
+  margin-left: 0.5rem;
+}
+
+.error-msg {
+  color: #ff8a80;
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+  text-align: center;
+}
+
+.status-complete { color: #69ff85; }
+.status-progress { color: #c9a96e; }
+.status-incomplete { color: rgba(255, 255, 255, 0.4); }
+
 @media (max-width: 900px) {
-  .grid-3 { grid-template-columns: 1fr; }
+  .grid-3 { grid-template-columns: 1fr 1fr; }
+  .grid-3 .full-width { grid-column: span 2; }
   .aura-grid { grid-template-columns: 1fr 1fr; }
   .path-toggle { grid-template-columns: 1fr; }
-  .alignment-header { flex-direction: column; gap: 2rem; text-align: center; }
+  .alignment-header { flex-direction: column; gap: 1.5rem; text-align: center; }
   .header-left { flex-direction: column; }
+  .header-right { flex-wrap: wrap; justify-content: center; gap: 1rem; }
   .main-title { font-size: 2rem; }
   .alignment-card { padding: 2rem; }
+  .progress-container { display: none; }
+}
+
+@media (max-width: 600px) {
+  .grid-3 { grid-template-columns: 1fr; }
+  .grid-3 .full-width { grid-column: span 1; }
+  .aura-grid { grid-template-columns: 1fr 1fr; }
+  .main-title { font-size: 1.5rem; }
+  .alignment-card { padding: 1.5rem; border-radius: 20px; }
+  .cosmic-form { gap: 2.5rem; }
+  .alignment-page { padding: 1rem; }
+  .site-nav-footer { flex-direction: column; gap: 1.5rem; }
+  .nav-links { flex-wrap: wrap; gap: 1rem; justify-content: center; }
+  .btn-primary-stellar { padding: 1rem 2rem; font-size: 0.85rem; }
 }
 </style>
+

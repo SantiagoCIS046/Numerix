@@ -1,12 +1,3 @@
-/**
- * Cliente HTTP base
- * Centraliza: base URL, headers, token de autenticación y manejo de errores
- */
-
-/**
- * En desarrollo: usa "/api" → pasa por el proxy de Vite (sin CORS).
- * En producción: usa la URL completa del backend desde el .env.
- */
 const API_BASE = import.meta.env.DEV
   ? "/api"
   : `${import.meta.env.VITE_API_URL}/api`;
@@ -33,7 +24,11 @@ async function http(endpoint, method = "GET", body = null, auth = false) {
   if (body) config.body = JSON.stringify(body);
 
   try {
-    const response = await fetch(`${API_BASE}${endpoint}`, config);
+    const fullUrl = `${API_BASE}${endpoint}`;
+    console.log(`[HTTP ${method}] ${fullUrl}`, body ? body : '');
+
+    const response = await fetch(fullUrl, config);
+    console.log(`[HTTP ${response.status}] ${fullUrl}`);
 
     // Intentar parsear JSON
     let data;

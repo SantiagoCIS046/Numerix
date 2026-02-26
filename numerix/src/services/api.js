@@ -4,7 +4,7 @@
  * Usa httpClient como capa de transporte.
  */
 
-import { httpClient } from "./http.js";
+import { httpClient } from "../plugins/axios.js";
 
 // ─────────────────────────────────────────
 // AUTH — /api/usuarios

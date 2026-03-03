@@ -12,6 +12,15 @@ const success = ref("");
 const selectedRole = ref(null);
 const passwordVisible = ref(false);
 
+const bootstrapAlert = ref({ show: false, message: '', type: 'info' })
+
+function showAlert(message, type = 'info') {
+  bootstrapAlert.value = { show: true, message, type }
+  setTimeout(() => {
+    bootstrapAlert.value.show = false
+  }, 4000)
+}
+
 const roles = [
   {
     id: 1,
@@ -104,6 +113,17 @@ async function handleRegister() {
   <div class="auth-page">
     <div class="stars-overlay"></div>
 
+    <!-- Bootstrap Alert -->
+    <div 
+      v-if="bootstrapAlert.show" 
+      :class="['alert', `alert-${bootstrapAlert.type}`, 'alert-dismissible', 'fade', 'show', 'cosmic-alert-top']" 
+      role="alert"
+    >
+      <span class="alert-icon">✨</span>
+      {{ bootstrapAlert.message }}
+      <button type="button" class="btn-close btn-close-white" @click="bootstrapAlert.show = false" aria-label="Close"></button>
+    </div>
+
     <!-- STEP 1: ROLE SELECTION -->
     <div v-if="step === 1" class="role-selection">
       <div class="selection-header">
@@ -159,7 +179,7 @@ async function handleRegister() {
       </div>
 
       <!-- Mensajes -->
-      <div v-if="error" class="alert alert-error">{{ error }}</div>
+      <div v-if="error" class="alert alert-danger">{{ error }}</div>
       <div v-if="success" class="alert alert-success">{{ success }}</div>
 
       <!-- LOGIN FORM -->
@@ -344,9 +364,9 @@ async function handleRegister() {
 
       <div class="auth-footer">
         <div class="footer-links">
-          <span>ÉTICA ZEN</span>
-          <span>ARMONÍA CSS</span>
-          <span>VACÍO MAP</span>
+          <span @click="showAlert('La ética Zen rige nuestro algoritmo.', 'info')">ÉTICA ZEN</span>
+          <span @click="showAlert('Armonía visual sintonizada.', 'info')">ARMONÍA CSS</span>
+          <span @click="showAlert('Mapeando el vacío cuántico...', 'info')">VACÍO MAP</span>
         </div>
         <div class="footer-tag">NUMEROLOGÍA CÓSMICA</div>
       </div>

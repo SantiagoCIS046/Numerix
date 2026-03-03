@@ -21,6 +21,7 @@ const user = computed(() => {
 const menuItems = ref([
   { icon: '🪄', label: 'INICIO', route: '/home' },
   { icon: '✨', label: 'LECTURAS', route: '/lecturas' },
+  { icon: '⏳', label: 'CRONOLOGÍA', route: '/historia' },
   { icon: '🌍', label: 'COMUNIDAD' },
   { icon: '✨', label: 'ALINEACIÓN', route: '/alineacion' },
   { icon: '🎯', label: 'REVELACIÓN', route: '/revelacion' },
@@ -108,8 +109,29 @@ const modules = ref([
 
 // --- Modal ---
 const activeModal = ref(null)
+const bootstrapAlert = ref({ show: false, message: '', type: 'info' })
+
 function openModal(mod) { activeModal.value = mod }
 function closeModal() { activeModal.value = null }
+
+function showAlert(message, type = 'info') {
+  bootstrapAlert.value = { show: true, message, type }
+  setTimeout(() => {
+    bootstrapAlert.value.show = false
+  }, 4000)
+}
+
+function handleNavClick(item) {
+  if (item.route) {
+    router.push({ path: item.route, state: { fromHome: item.route === '/alineacion' } })
+  } else {
+    showAlert(`El módulo ${item.label} se está sincronizando con los servidores de Andrómeda. Disponible pronto.`, 'info')
+  }
+}
+
+function revealDestiny() {
+  router.push('/revelacion')
+}
 
 const auraLabels = {
   eterea:     { label: 'ETÉREA',     icon: '☁️' },
@@ -126,6 +148,8 @@ const pathLabels = {
 function logout() {
   localStorage.removeItem('token')
   localStorage.removeItem('user')
+  localStorage.removeItem('alignmentProfile')
+  localStorage.removeItem('userSubscription')
   router.push('/auth')
 }
 
@@ -173,15 +197,26 @@ const activeAstral = ref(null)
     <!-- Sistema solar 3D en canvas -->
     <SistemaSolar />
 
+    <!-- Bootstrap Alert -->
+    <div 
+      v-if="bootstrapAlert.show" 
+      :class="['alert', `alert-${bootstrapAlert.type}`, 'alert-dismissible', 'fade', 'show', 'cosmic-alert-top']" 
+      role="alert"
+    >
+      <span class="alert-icon">✨</span>
+      {{ bootstrapAlert.message }}
+      <button type="button" class="btn-close" @click="bootstrapAlert.show = false" aria-label="Close"></button>
+    </div>
+
     <!-- SIDEBAR -->
     <aside class="sidebar">
       <div class="sidebar-header">
-        <div class="logo-container">
+        <div class="logo-container" @click="router.push('/home')" style="cursor: pointer;">
           <div class="logo-inner">
             <span class="logo-spark">✨</span>
           </div>
         </div>
-        <h1 class="sidebar-brand">ASTRA</h1>
+        <h1 class="sidebar-brand" @click="router.push('/home')" style="cursor: pointer;">ASTRA</h1>
         <p class="sidebar-tagline">NODO CELESTIAL</p>
       </div>
 
@@ -190,7 +225,7 @@ const activeAstral = ref(null)
           v-for="item in menuItems" 
           :key="item.label"
           :class="['nav-item', { active: item.active }]"
-          @click="item.route ? router.push({ path: item.route, state: { fromHome: item.route === '/alineacion' } }) : null"
+          @click="handleNavClick(item)"
         >
           <span class="nav-icon">{{ item.icon }}</span>
           <span class="nav-label">{{ item.label }}</span>
@@ -201,10 +236,10 @@ const activeAstral = ref(null)
         <div class="premium-card">
           <p class="premium-title">ACCESO INFINITO</p>
           <p class="premium-desc">Desbloquea el mapa cósmico y los senderos estelares de 2024.</p>
-          <button class="btn-premium">SUBIR AL NIVEL PREMIUM</button>
+          <button class="btn-premium" @click="router.push('/suscripcion')">SUBIR AL NIVEL PREMIUM</button>
         </div>
 
-        <div class="user-profile" @click="logout">
+        <div class="user-profile" @click="logout" title="Cerrar Conexión">
           <div class="user-avatar">
             <img :src="`https://ui-avatars.com/api/?name=${user?.nombre || 'User'}&background=fff&color=0f0c29`" alt="User" />
             <div class="status-indicator"></div>
@@ -213,6 +248,7 @@ const activeAstral = ref(null)
             <p class="user-name">{{ user?.nombre }}</p>
             <p class="user-role">{{ user?.role }}</p>
           </div>
+          <span class="logout-icon">⏻</span>
         </div>
       </div>
     </aside>
@@ -231,7 +267,7 @@ const activeAstral = ref(null)
           </div>
         </div>
         <div class="header-actions">
-          <button class="btn-notification">
+          <button class="btn-notification" @click="showAlert('Tus notificaciones están siendo procesadas por el Nodo 4', 'info')">
             <span class="notif-icon">🔔</span>
             <div class="notif-badge"></div>
           </button>
@@ -258,7 +294,7 @@ const activeAstral = ref(null)
             <p class="card-desc">
               Desbloquea las cartas de retorno solar avanzadas y los ciclos planetarios que definen tu evolución personal para la próxima década.
             </p>
-            <button class="btn-revelar">
+            <button class="btn-revelar" @click="revealDestiny">
               REVELAR DESTINO <span class="btn-icon">🧭</span>
             </button>
           </div>
@@ -576,6 +612,57 @@ const activeAstral = ref(null)
   padding-top: 1.5rem;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   cursor: pointer;
+  transition: all 0.3s;
+}
+
+.user-profile:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.user-info {
+  flex: 1;
+}
+
+.logout-icon {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.2);
+  transition: 0.3s;
+  margin-right: 0.5rem;
+}
+
+.user-profile:hover .logout-icon {
+  color: #ff4d4d;
+  transform: scale(1.1);
+}
+
+/* Cosmic Alert Top */
+.cosmic-alert-top {
+  position: fixed;
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1100;
+  background: rgba(15, 12, 41, 0.9);
+  border: 1px solid rgba(201, 169, 110, 0.4);
+  color: #fff;
+  backdrop-filter: blur(15px);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5), 0 0 20px rgba(201, 169, 110, 0.1);
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: 1px;
+  min-width: 400px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+}
+
+.alert-icon {
+  font-size: 1.2rem;
+}
+
+.btn-close {
+  filter: invert(1);
 }
 
 .user-avatar {

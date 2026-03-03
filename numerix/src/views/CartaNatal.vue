@@ -53,6 +53,15 @@ function goBack() {
   router.push('/home')
 }
 
+const bootstrapAlert = ref({ show: false, message: '', type: 'info' })
+
+function showAlert(message, type = 'info') {
+  bootstrapAlert.value = { show: true, message, type }
+  setTimeout(() => {
+    bootstrapAlert.value.show = false
+  }, 4000)
+}
+
 function goTo(path) {
   router.push(path)
 }
@@ -66,6 +75,17 @@ function goTo(path) {
       :hue-shift="280"
       class="galaxy-bg"
     />
+
+    <!-- Bootstrap Alert -->
+    <div 
+      v-if="bootstrapAlert.show" 
+      :class="['alert', `alert-${bootstrapAlert.type}`, 'alert-dismissible', 'fade', 'show', 'cosmic-alert-top']" 
+      role="alert"
+    >
+      <span class="alert-icon">✨</span>
+      {{ bootstrapAlert.message }}
+      <button type="button" class="btn-close btn-close-white" @click="bootstrapAlert.show = false" aria-label="Close"></button>
+    </div>
     <!-- NAV BAR -->
     <header class="navbar">
       <div class="nav-left">
@@ -96,7 +116,7 @@ function goTo(path) {
           </div>
           <span class="user-name-mini">{{ user?.nombre }}</span>
         </div>
-        <button class="premium-btn">PREMIUM</button>
+        <button class="premium-btn" @click="goTo('/suscripcion')">PREMIUM</button>
       </div>
     </header>
 
@@ -179,7 +199,7 @@ function goTo(path) {
           <div class="cta-content">
             <h2>Tu Guía Evolutiva Personalizada</h2>
             <p>Descubre cómo transitar los mayores retos de tu alma y aprovechar tus dones kármicos en este ciclo.</p>
-            <button class="btn-unlock-full">DESBLOQUEAR INFORME DE 40 PÁGINAS ✦</button>
+            <button class="btn-unlock-full" @click="goTo('/suscripcion')">DESBLOQUEAR INFORME DE 40 PÁGINAS ✦</button>
           </div>
         </section>
       </div>
@@ -188,8 +208,8 @@ function goTo(path) {
     <footer class="page-footer">
       <div class="footer-left">© 2024 Astralis Natal Services.</div>
       <div class="footer-right">
-        <a href="#">Privacidad</a>
-        <a href="#">Ética Astral</a>
+        <a href="#" @click.prevent="showAlert('Tu mapa estelar está bajo la protección del Guardián del Umbral.', 'info')">Privacidad</a>
+        <a href="#" @click.prevent="showAlert('Acuerdo de resonancia harmónica activa.', 'info')">Ética Astral</a>
       </div>
     </footer>
   </div>
@@ -398,6 +418,36 @@ function goTo(path) {
 }
 .footer-right { display: flex; gap: 2rem; }
 .footer-right a { color: inherit; text-decoration: none; }
+
+/* Cosmic Alert Top */
+.cosmic-alert-top {
+  position: fixed;
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1100;
+  background: rgba(15, 12, 41, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  backdrop-filter: blur(15px);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5), 0 0 20px rgba(255, 255, 255, 0.1);
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: 1px;
+  min-width: 400px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+}
+
+.alert-icon {
+  font-size: 1.2rem;
+}
+
+.btn-close-white {
+  filter: invert(1);
+}
 
 /* LOADING */
 .loading-overlay { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 400px; gap: 2rem; }

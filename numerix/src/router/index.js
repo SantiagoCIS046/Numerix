@@ -8,6 +8,9 @@ import Compatibilidad from "../views/Compatibilidad.vue";
 import Horoscopo from "../views/Horoscopo.vue";
 import Revelacion from "../views/Revelacion.vue";
 import FullReport from "../views/FullReport.vue";
+import PlanesSubscripcion from "../views/PlanesSubscripcion.vue";
+import HistoriaEstelar from "../views/HistoriaEstelar.vue";
+import MetodosPago from "../views/MetodosPago.vue";
 
 const routes = [
   {
@@ -58,6 +61,21 @@ const routes = [
     path: "/informe-personal",
     name: "FullReport",
     component: FullReport,
+  },
+  {
+    path: "/suscripcion",
+    name: "PlanesSubscripcion",
+    component: PlanesSubscripcion,
+  },
+  {
+    path: "/historia",
+    name: "HistoriaEstelar",
+    component: HistoriaEstelar,
+  },
+  {
+    path: "/pagos",
+    name: "MetodosPago",
+    component: MetodosPago,
   },
 ];
 

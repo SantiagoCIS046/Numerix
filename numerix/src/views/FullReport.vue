@@ -47,7 +47,22 @@ onMounted(() => {
 })
 
 function goBack() { router.back() }
-function printReport() { window.print() }
+
+const bootstrapAlert = ref({ show: false, message: '', type: 'info' })
+
+function showAlert(message, type = 'info') {
+  bootstrapAlert.value = { show: true, message, type }
+  setTimeout(() => {
+    bootstrapAlert.value.show = false
+  }, 4000)
+}
+
+function printReport() { 
+  showAlert('Preparando transmisión de datos para PDF...', 'success')
+  setTimeout(() => {
+    window.print() 
+  }, 1000)
+}
 </script>
 
 <template>
@@ -58,6 +73,17 @@ function printReport() { window.print() }
       :hue-shift="220"
       class="galaxy-bg"
     />
+
+    <!-- Bootstrap Alert -->
+    <div 
+      v-if="bootstrapAlert.show" 
+      :class="['alert', `alert-${bootstrapAlert.type}`, 'alert-dismissible', 'fade', 'show', 'cosmic-alert-top']" 
+      role="alert"
+    >
+      <span class="alert-icon">✨</span>
+      {{ bootstrapAlert.message }}
+      <button type="button" class="btn-close btn-close-white" @click="bootstrapAlert.show = false" aria-label="Close"></button>
+    </div>
     <div v-if="generating" class="generating-overlay">
       <div class="gen-content">
         <div class="cosmic-spinner">
@@ -130,7 +156,7 @@ function printReport() { window.print() }
       </main>
 
       <footer class="report-footer">
-        © 2024 Astralis Advanced Analytics. Todos los derechos cósmicos reservados.
+        <a href="#" @click.prevent="showAlert('Tu destino está encriptado con protocolos de clase S.', 'info')" style="color: inherit; text-decoration: none;">© 2024 Astralis Advanced Analytics. Todos los derechos cósmicos reservados.</a>
       </footer>
     </div>
   </div>
@@ -242,6 +268,39 @@ function printReport() { window.print() }
 .signature { font-family: 'Playfair Display', serif; font-size: 1.5rem; }
 
 .report-footer { text-align: center; font-size: 0.7rem; color: rgba(255, 255, 255, 0.2); border-top: 1px solid rgba(255, 255, 255, 0.05); padding: 4rem; }
+
+/* Cosmic Alert Top */
+.cosmic-alert-top {
+  position: fixed;
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2200;
+  background: rgba(15, 12, 41, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  backdrop-filter: blur(15px);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5), 0 0 20px rgba(255, 255, 255, 0.1);
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: 1px;
+  min-width: 400px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+}
+
+.alert-icon {
+  font-size: 1.2rem;
+}
+
+.btn-close-white {
+  filter: invert(1);
+}
+@media print {
+  .cosmic-alert-top { display: none !important; }
+}
 
 @media (max-width: 768px) {
   .pillars-grid { grid-template-columns: 1fr; }

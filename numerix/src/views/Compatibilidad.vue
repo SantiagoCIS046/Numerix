@@ -54,6 +54,15 @@ function handleSync() {
 
 function goBack() { router.push('/home') }
 function goTo(path) { router.push(path) }
+
+const bootstrapAlert = ref({ show: false, message: '', type: 'info' })
+
+function showAlert(message, type = 'info') {
+  bootstrapAlert.value = { show: true, message, type }
+  setTimeout(() => {
+    bootstrapAlert.value.show = false
+  }, 4000)
+}
 </script>
 
 <template>
@@ -64,6 +73,17 @@ function goTo(path) { router.push(path) }
       :hue-shift="180"
       class="galaxy-bg"
     />
+
+    <!-- Bootstrap Alert -->
+    <div 
+      v-if="bootstrapAlert.show" 
+      :class="['alert', `alert-${bootstrapAlert.type}`, 'alert-dismissible', 'fade', 'show', 'cosmic-alert-top']" 
+      role="alert"
+    >
+      <span class="alert-icon">✨</span>
+      {{ bootstrapAlert.message }}
+      <button type="button" class="btn-close btn-close-white" @click="bootstrapAlert.show = false" aria-label="Close"></button>
+    </div>
     <header class="navbar">
       <div class="nav-left">
         <button class="nav-back-btn" @click="goBack"><span>←</span> VOLVER</button>
@@ -79,7 +99,7 @@ function goTo(path) { router.push(path) }
           <div class="user-avatar-mini"><img :src="`https://ui-avatars.com/api/?name=${user?.nombre || 'User'}&background=fff&color=6366f1`" alt="User" /></div>
           <span class="user-name-mini">{{ user?.nombre }}</span>
         </div>
-        <button class="premium-btn">PREMIUM</button>
+        <button class="premium-btn" @click="goTo('/suscripcion')">PREMIUM</button>
       </div>
     </header>
 
@@ -148,13 +168,43 @@ function goTo(path) { router.push(path) }
 
     <footer class="page-footer">
       <div class="footer-left">© 2024 Astralis Resonance.</div>
-      <div class="footer-right"><a href="#">Privacidad</a></div>
+      <div class="footer-right"><a href="#" @click.prevent="showAlert('Tu sincronía es sagrada y privada.', 'info')">Privacidad</a></div>
     </footer>
   </div>
 </template>
 
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');
+
+/* Cosmic Alert Top */
+.cosmic-alert-top {
+  position: fixed;
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1100;
+  background: rgba(15, 12, 41, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  backdrop-filter: blur(15px);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5), 0 0 20px rgba(255, 255, 255, 0.1);
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: 1px;
+  min-width: 400px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+}
+
+.alert-icon {
+  font-size: 1.2rem;
+}
+
+.btn-close-white {
+  filter: invert(1);
+}
 
 .compatibility-container { 
   background-color: #020205; 

@@ -27,8 +27,20 @@ const formData = ref({
   birthTime: '',       // optional
   path: 'solar',       // 'solar' | 'lunar'
   auraDensity: 'fluida',
-  cosmicVision: ''
+  cosmicVision: '',
+  country: 'CO'        // Default to Colombia
 })
+
+const countries = [
+  { code: 'CO', name: 'COLOMBIA', currency: 'COP', flag: '🇨🇴' },
+  { code: 'ES', name: 'ESPAÑA', currency: 'EUR', flag: '🇪🇸' },
+  { code: 'US', name: 'ESTADOS UNIDOS', currency: 'USD', flag: '🇺🇸' },
+  { code: 'MX', name: 'MÉXICO', currency: 'MXN', flag: '🇲🇽' },
+  { code: 'AR', name: 'ARGENTINA', currency: 'ARS', flag: '🇦🇷' },
+  { code: 'CL', name: 'CHILE', currency: 'CLP', flag: '🇨🇱' },
+  { code: 'PE', name: 'PERÚ', currency: 'PEN', flag: '🇵🇪' },
+  { code: 'EU', name: 'EUROPA (OTRO)', currency: 'EUR', flag: '🇪🇺' }
+]
 
 const auraOptions = [
   { id: 'eterea',    label: 'ETÉREA',     icon: '☁️' },
@@ -37,7 +49,14 @@ const auraOptions = [
   { id: 'nebulosa',  label: 'NEBULOSA',   icon: '🌫️' }
 ]
 
-const errorMsg = ref('')
+const bootstrapAlert = ref({ show: false, message: '', type: 'danger' })
+
+function showAlert(message, type = 'danger') {
+  bootstrapAlert.value = { show: true, message, type }
+  setTimeout(() => {
+    bootstrapAlert.value.show = false
+  }, 5000)
+}
 
 // Dynamic status based on completion
 const formStatus = computed(() => {
@@ -54,14 +73,12 @@ const statusClass = computed(() => ({
 }))
 
 function handleSubmit() {
-  errorMsg.value = ''
-
   if (!formData.value.fullName) {
-    errorMsg.value = 'Por favor ingresa tu nombre completo.'
+    showAlert('Por favor ingresa tu nombre completo.')
     return
   }
   if (!formData.value.birthDate) {
-    errorMsg.value = 'La fecha de nacimiento es requerida.'
+    showAlert('La fecha de nacimiento es requerida.')
     return
   }
 
@@ -71,7 +88,11 @@ function handleSubmit() {
     savedAt: new Date().toISOString()
   }))
 
-  router.push('/home')
+  showAlert('¡Alineación exitosa! Sincronizando con el Nodo Principal...', 'success')
+  
+  setTimeout(() => {
+    router.push('/home')
+  }, 2000)
 }
 
 function resetForm() {
@@ -81,9 +102,9 @@ function resetForm() {
     birthTime: '',
     path: 'solar',
     auraDensity: 'fluida',
-    cosmicVision: ''
+    cosmicVision: '',
+    country: 'CO'
   }
-  errorMsg.value = ''
 }
 </script>
 
@@ -94,6 +115,17 @@ function resetForm() {
 
     <!-- UI HEADERS -->
     <header class="alignment-header">
+      <!-- Bootstrap Alert -->
+      <div 
+        v-if="bootstrapAlert.show" 
+        :class="['alert', `alert-${bootstrapAlert.type}`, 'alert-dismissible', 'fade', 'show', 'cosmic-alert-top']" 
+        role="alert"
+      >
+        <span class="alert-icon">✨</span>
+        {{ bootstrapAlert.message }}
+        <button type="button" class="btn-close btn-close-white" @click="bootstrapAlert.show = false" aria-label="Close"></button>
+      </div>
+
       <div class="header-left">
         <div class="logo-circle">
           <span class="logo-icon">✨</span>
@@ -211,7 +243,6 @@ function resetForm() {
               </div>
             </div>
           </div>
-
           <!-- SECTION III: VISION -->
           <div class="form-section">
             <h3 class="section-num">III. <span class="section-text">Describe tu visión de la convergencia cósmica definitiva.</span></h3>
@@ -224,14 +255,29 @@ function resetForm() {
               <div class="corner-accent"></div>
             </div>
           </div>
+
+          <!-- SECTION IV: ORIGEN -->
+          <div class="form-section">
+            <h3 class="section-num">IV. <span class="section-text">¿Desde qué coordenadas terrestres emite tu alma su señal?</span></h3>
+            <div class="country-selection">
+              <div class="form-group full-width">
+                <label>ORIGEN TERRESTRE (PAÍS)</label>
+                <div class="input-with-icon">
+                  <select v-model="formData.country" class="cosmic-input country-select">
+                    <option v-for="c in countries" :key="c.code" :value="c.code">
+                      {{ c.flag }} {{ c.name }}
+                    </option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
         </form>
       </div>
 
       <!-- FOOTER ACTIONS -->
       <footer class="alignment-footer">
         <div class="status-msg">ESTADO: <span :class="statusClass">{{ formStatus }}</span></div>
-
-        <div v-if="errorMsg" class="error-msg">⚠ {{ errorMsg }}</div>
 
         <button class="btn-primary-stellar" @click="handleSubmit">
           <span class="btn-text">ALINEAR CON LAS ESTRELLAS</span>
@@ -833,6 +879,32 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 .status-complete { color: #69ff85; }
 .status-progress { color: #c9a96e; }
 .status-incomplete { color: rgba(255, 255, 255, 0.4); }
+
+/* Cosmic Alert Top */
+.cosmic-alert-top {
+  position: fixed;
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1100;
+  background: rgba(15, 12, 41, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  backdrop-filter: blur(15px);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5), 0 0 20px rgba(255, 255, 255, 0.1);
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: 1px;
+  min-width: 400px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+}
+
+.alert-icon {
+  font-size: 1.2rem;
+}
 
 @media (max-width: 900px) {
   .grid-3 { grid-template-columns: 1fr 1fr; }

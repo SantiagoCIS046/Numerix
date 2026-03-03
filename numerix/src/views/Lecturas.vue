@@ -101,6 +101,15 @@ onMounted(async () => {
 function goBack() {
   router.push('/home')
 }
+
+const bootstrapAlert = ref({ show: false, message: '', type: 'info' })
+
+function showAlert(message, type = 'info') {
+  bootstrapAlert.value = { show: true, message, type }
+  setTimeout(() => {
+    bootstrapAlert.value.show = false
+  }, 4000)
+}
 </script>
 
 <template>
@@ -111,6 +120,17 @@ function goBack() {
       :hue-shift="240"
       class="galaxy-bg"
     />
+
+    <!-- Bootstrap Alert -->
+    <div 
+      v-if="bootstrapAlert.show" 
+      :class="['alert', `alert-${bootstrapAlert.type}`, 'alert-dismissible', 'fade', 'show', 'cosmic-alert-top']" 
+      role="alert"
+    >
+      <span class="alert-icon">✨</span>
+      {{ bootstrapAlert.message }}
+      <button type="button" class="btn-close btn-close-white" @click="bootstrapAlert.show = false" aria-label="Close"></button>
+    </div>
     <!-- NAV BAR -->
     <header class="navbar">
       <div class="nav-left">
@@ -141,7 +161,7 @@ function goBack() {
           </div>
           <span class="user-name-mini">{{ user?.nombre }}</span>
         </div>
-        <button class="premium-btn">PREMIUM</button>
+        <button class="premium-btn" @click="navigateTo('/suscripcion')">PREMIUM</button>
       </div>
     </header>
 
@@ -182,7 +202,7 @@ function goBack() {
             </div>
             <div class="card-footer">
               <span class="footer-stat">FRECUENCIA: {{ currentReading.frecuencia }}</span>
-              <a href="#" class="footer-link">Leer análisis completo →</a>
+              <a href="#" class="footer-link" @click.prevent="showAlert('Análisis profundo calculándose en los servidores...', 'info')">Leer análisis completo →</a>
             </div>
           </div>
 
@@ -275,10 +295,10 @@ function goBack() {
         © 2024 Colectivo de Numerología Astralis. Todos los derechos reservados.
       </div>
       <div class="footer-right">
-        <a href="#">Política de Privacidad</a>
-        <a href="#">Términos Cósmicos</a>
-        <a href="#">Contacto</a>
-        <button class="share-btn">🔗</button>
+        <a href="#" @click.prevent="showAlert('Tu privacidad está protegida por la ley del vacío.', 'info')">Política de Privacidad</a>
+        <a href="#" @click.prevent="showAlert('Términos regidos por la sincronía estelar.', 'info')">Términos Cósmicos</a>
+        <a href="#" @click.prevent="showAlert('Enviando señal al Oráculo...', 'success')">Contacto</a>
+        <button class="share-btn" @click="showAlert('Copiando enlace universal al portapapeles...', 'success')">🔗</button>
       </div>
     </footer>
   </div>
@@ -793,6 +813,36 @@ function goBack() {
   align-items: center;
   justify-content: center;
   cursor: pointer;
+}
+
+/* Cosmic Alert Top */
+.cosmic-alert-top {
+  position: fixed;
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1100;
+  background: rgba(15, 12, 41, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  backdrop-filter: blur(15px);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5), 0 0 20px rgba(255, 255, 255, 0.1);
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: 1px;
+  min-width: 400px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+}
+
+.alert-icon {
+  font-size: 1.2rem;
+}
+
+.btn-close-white {
+  filter: invert(1);
 }
 
 @media (max-width: 900px) {

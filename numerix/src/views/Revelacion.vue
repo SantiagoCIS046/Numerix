@@ -5,6 +5,60 @@ import LightPillar from '@/components/LightPillar.vue'
 
 const router = useRouter()
 
+// --- DATA POOLS ---
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)] }
+
+const lunarPool = [
+  { value: '🌙', sub: 'Creciente' },
+  { value: '🌑', sub: 'Nueva' },
+  { value: '🌕', sub: 'Llena' },
+  { value: '🌓', sub: 'Cuarto Creciente' },
+  { value: '🌗', sub: 'Cuarto Menguante' }
+]
+const energyPool = [
+  { value: 'Alta', sub: 'Radiante' },
+  { value: 'Densa', sub: 'Enraizada' },
+  { value: 'Fluida', sub: 'En Flujo' },
+  { value: 'Sutil', sub: 'Etérea' }
+]
+const freqPool = [
+  { value: '528Hz', sub: 'Sana' },
+  { value: '432Hz', sub: 'Cósmica' },
+  { value: '639Hz', sub: 'Conexión' },
+  { value: '852Hz', sub: 'Intuición' }
+]
+
+const synthPool = [
+  { id: 11, title: 'NÚMERO DEL ALMA', subtitle: 'ESENCIA INTERIOR', desc: 'Refleja tus deseos más profundos y la verdadera naturaleza de tu espíritu.', color: '#6366f1' },
+  { id: 5, title: 'PERSONALIDAD', subtitle: 'IMAGEN EXTERNA', desc: 'Cómo te percibe el mundo y la máscara que muestras ante los demás.', color: '#3b82f6' },
+  { id: 9, title: 'MISIÓN DE VIDA', subtitle: 'HUMANITARIO', desc: 'Tu propósito final es el servicio a la humanidad y la culminación de ciclos.', color: '#4f46e5' },
+  { id: 22, title: 'MAESTRO CONSTRUCTOR', subtitle: 'PODER MATERIAL', desc: 'Capacidad para manifestar grandes visiones en el plano físico.', color: '#8b5cf6' },
+  { id: 7, title: 'SABIDURÍA', subtitle: 'BUSCADOR', desc: 'Análisis profundo y búsqueda de verdades universales.', color: '#06b6d4' }
+]
+
+const nodesPool = [
+  { label: 'Finanzas', statusPool: ['Próspero', 'Estable', 'En Crecimiento', 'Saneando'], color: '#10b981' },
+  { label: 'Amor', statusPool: ['Estable', 'Vibrante', 'En Armonía', 'En Evolución'], color: '#ef4444' },
+  { label: 'Carrera', statusPool: ['Ascenso', 'Inspiración', 'Manifestación', 'Estabilidad'], color: '#3b82f6' },
+  { label: 'Salud', statusPool: ['Vigorosa', 'En Equilibrio', 'Regeneración', 'Sutil'], color: '#8b5cf6' }
+]
+
+const oraclePool = [
+  "La confianza en el proceso es tu mayor aliada hoy...",
+  "Mira más allá de lo evidente, lo que buscas está cerca.",
+  "Un ciclo se cierra para dar paso a una luz más brillante.",
+  "Tu intuición es una brújula infalible en este momento.",
+  "La paciencia transformará el hierro en oro.",
+  "Sincroniza tu aliento con el latido del universo."
+]
+
+// --- STATE ---
+const stats = ref([])
+const numericalSynthesis = ref([])
+const powerNodes = ref([])
+const oracleText = ref('')
+const zoomScale = ref(1)
+
 // Dynamic user data
 const user = computed(() => {
   const stored = localStorage.getItem('user')
@@ -19,23 +73,6 @@ const user = computed(() => {
   }
 })
 
-const stats = ref([
-  { label: 'FASE LUNAR', value: '🌙', sub: 'Creciente' },
-  { label: 'ENERGÍA', value: 'Alta', sub: 'Radiante' },
-  { label: 'FRECUENCIA', value: '528Hz', sub: 'Sana' }
-])
-
-const numericalSynthesis = ref([
-  { id: 11, title: 'NÚMERO DEL ALMA', subtitle: 'ESENCIA INTERIOR', desc: 'Refleja tus deseos más profundos y la verdadera naturaleza de tu espíritu.', color: '#6366f1' },
-  { id: 5, title: 'PERSONALIDAD', subtitle: 'IMAGEN EXTERNA', desc: 'Cómo te percibe el mundo y la máscara que muestras ante los demás.', color: '#3b82f6' },
-  { id: 9, title: 'MISIÓN DE VIDA', subtitle: 'HUMANITARIO', desc: 'Tu propósito final es el servicio a la humanidad y la culminación de ciclos.', color: '#4f46e5' }
-])
-
-const powerNodes = ref([
-  { label: 'Finanzas', status: 'Próspero', color: '#10b981' },
-  { label: 'Amor', status: 'Estable', color: '#ef4444' }
-])
-
 // Interactive Insights
 const satellites = ref([
   { id: 1, label: 'EXPANSIÓN', message: 'MENSAJE OCULTO: EXPANSIÓN', class: 's-1' },
@@ -45,12 +82,33 @@ const satellites = ref([
 ])
 
 const activeSatellite = ref(null)
-
-// Animation state for the circles
 const isLoaded = ref(false)
+
+function generateNewReading() {
+  stats.value = [
+    { label: 'FASE LUNAR', ...pick(lunarPool) },
+    { label: 'ENERGÍA', ...pick(energyPool) },
+    { label: 'FRECUENCIA', ...pick(freqPool) }
+  ]
+  
+  // Pick 3 unique random synthesis items
+  const shuffledSynth = [...synthPool].sort(() => 0.5 - Math.random())
+  numericalSynthesis.value = shuffledSynth.slice(0, 3)
+  
+  // Pick 2 random nodes
+  const shuffledNodes = [...nodesPool].sort(() => 0.5 - Math.random())
+  powerNodes.value = shuffledNodes.slice(0, 2).map(n => ({
+    label: n.label,
+    status: pick(n.statusPool),
+    color: n.color
+  }))
+  
+  oracleText.value = pick(oraclePool)
+}
+
 onMounted(() => {
   setTimeout(() => { isLoaded.value = true }, 100)
-  // Default active satellite
+  generateNewReading()
   activeSatellite.value = satellites.value[0]
 })
 
@@ -58,10 +116,14 @@ function setSatellite(sat) {
   activeSatellite.value = sat
 }
 
-function generateNewReading() {
-  // Logic to refresh or regenerate data if needed
-  console.log('Generating new reading...')
+function adjustZoom(delta) {
+  zoomScale.value = Math.min(Math.max(zoomScale.value + delta, 0.5), 2)
 }
+
+const starsIntensity = computed(() => {
+  // Increases as zoomScale increases
+  return Math.min(Math.max((zoomScale.value - 1) * 2, 0), 1)
+})
 
 function goBack() {
   router.push('/home')
@@ -71,11 +133,12 @@ function goBack() {
 <template>
   <div class="revelation-container">
     <div class="stars-bg"></div>
+    <div class="dynamic-stars" :style="{ opacity: starsIntensity }"></div>
     <div class="background-effects">
       <LightPillar
         topColor="#48FF28"
         bottomColor="#9EF19E"
-        :intensity="0.6"
+        :intensity="0.6 * zoomScale"
         :rotationSpeed="0.2"
         :glowAmount="0.005"
         :pillarWidth="3.0"
@@ -105,7 +168,7 @@ function goBack() {
     <div class="content-grid">
       <!-- Main Interactive Chart Area -->
       <main class="chart-area">
-        <div class="interactive-chart">
+        <div class="interactive-chart" :style="{ transform: `scale(${zoomScale})` }">
           <!-- Background Geometry -->
           <div class="geometry-overlay">
             <div class="diamond"></div>
@@ -154,8 +217,8 @@ function goBack() {
             </div>
           </div>
           <div class="zoom-controls">
-            <button class="zoom-btn">+</button>
-            <button class="zoom-btn">-</button>
+            <button class="zoom-btn" @click="adjustZoom(0.1)" title="Aumentar">+</button>
+            <button class="zoom-btn" @click="adjustZoom(-0.1)" title="Alejar">-</button>
           </div>
         </footer>
       </main>
@@ -214,7 +277,7 @@ function goBack() {
         <section class="oracle-section">
           <div class="oracle-card">
             <p class="oracle-label">CONSEJO DEL ORÁCULO</p>
-            <p class="oracle-text">"La confianza en el proceso es tu mayor aliada hoy..."</p>
+            <p class="oracle-text">"{{ oracleText }}"</p>
           </div>
           <button class="generate-btn" @click="generateNewReading">
             <span class="btn-icon">🪄</span> GENERAR NUEVA LECTURA
@@ -248,6 +311,22 @@ function goBack() {
   background-size: 200px 200px;
   opacity: 0.1;
   pointer-events: none;
+}
+
+.dynamic-stars {
+  position: absolute;
+  top: -100px; left: -100px; right: -100px; bottom: -100px;
+  background-image: 
+    radial-gradient(2px 2px at 40px 60px, #fff, rgba(0,0,0,0)),
+    radial-gradient(1.5px 1.5px at 150px 180px, #fbbf24, rgba(0,0,0,0)),
+    radial-gradient(2px 2px at 280px 40px, #fff, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 350px 300px, #fff, rgba(0,0,0,0)),
+    radial-gradient(2px 2px at 450px 120px, #fbbf24, rgba(0,0,0,0));
+  background-size: 500px 500px;
+  opacity: 0;
+  transition: opacity 0.8s ease-out;
+  pointer-events: none;
+  z-index: 1;
 }
 
 .background-effects {
@@ -365,6 +444,7 @@ function goBack() {
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .geometry-overlay {

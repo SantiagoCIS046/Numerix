@@ -190,7 +190,7 @@ const activeAstral = ref(null)
           v-for="item in menuItems" 
           :key="item.label"
           :class="['nav-item', { active: item.active }]"
-          @click="item.route ? router.push(item.route) : null"
+          @click="item.route ? router.push({ path: item.route, state: { fromHome: item.route === '/alineacion' } }) : null"
         >
           <span class="nav-icon">{{ item.icon }}</span>
           <span class="nav-label">{{ item.label }}</span>

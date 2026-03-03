@@ -1,8 +1,20 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
+const isFromHome = ref(false)
+
+onMounted(() => {
+  // history.state is populated by vue-router when using push with state
+  if (history.state && history.state.fromHome) {
+    isFromHome.value = true
+  }
+})
+
+function goBackToHome() {
+  router.push('/home')
+}
 
 
 // Pre-fill name from logged-in user
@@ -92,6 +104,9 @@ function resetForm() {
         </div>
       </div>
       <div class="header-right">
+        <button v-if="isFromHome" class="btn-return-home" @click="goBackToHome">
+          <span class="return-icon">←</span>VOLVER AL NODO PRINCIPAL
+        </button>
         <div class="coord-item">LAT: 34.5522° N</div>
         <div class="coord-item">LONG: 118.2437° W</div>
         <div class="coord-item">ÉPOCA: J2000.0</div>
@@ -348,10 +363,41 @@ function resetForm() {
 
 .header-right {
   display: flex;
+  align-items: center;
   gap: 2rem;
   font-size: 0.7rem;
   color: rgba(255, 255, 255, 0.4);
   letter-spacing: 1px;
+}
+
+.btn-return-home {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50px;
+  padding: 0.6rem 1.2rem;
+  color: #c9a96e;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-right: 1rem;
+}
+
+.btn-return-home:hover {
+  background: rgba(201, 169, 110, 0.1);
+  border-color: #c9a96e;
+  color: #fff;
+  transform: translateX(-5px);
+  box-shadow: 0 0 15px rgba(201, 169, 110, 0.2);
+}
+
+.return-icon {
+  font-size: 0.9rem;
 }
 
 /* PROGRESS */

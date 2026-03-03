@@ -1,22 +1,38 @@
 <script setup>
-import { computed, ref, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import SistemaSolar from '@/components/SistemaSolar.vue'
 
 const router = useRouter()
+const route = useRoute()
 
 const user = computed(() => {
   const stored = localStorage.getItem('user')
-  return stored ? JSON.parse(stored) : { name: 'JULIÁN VANE', role: 'BUSCADOR NIVEL 11' }
+  const alignment = localStorage.getItem('alignmentProfile')
+  const userData = stored ? JSON.parse(stored) : null
+  const alignmentData = alignment ? JSON.parse(alignment) : null
+  
+  return {
+    nombre: alignmentData?.fullName || userData?.nombre || userData?.name || 'VIAJERO ASTRAL',
+    role: userData?.role || 'BUSCADOR CÓSMICO'
+  }
 })
 
-const menuItems = [
-  { icon: '🪄', label: 'INICIO', active: true },
-  { icon: '✨', label: 'LECTURAS', active: false },
-  { icon: '🌍', label: 'COMUNIDAD', active: false },
-  { icon: '✨', label: 'ALINEACIÓN', active: false, route: '/alineacion' },
-  { icon: '⚙️', label: 'CONFIGURACIÓN', active: false },
-]
+const menuItems = ref([
+  { icon: '🪄', label: 'INICIO', route: '/home' },
+  { icon: '✨', label: 'LECTURAS', route: '/lecturas' },
+  { icon: '🌍', label: 'COMUNIDAD' },
+  { icon: '✨', label: 'ALINEACIÓN', route: '/alineacion' },
+  { icon: '🎯', label: 'REVELACIÓN', route: '/revelacion' },
+  { icon: '⚙️', label: 'CONFIGURACIÓN' },
+])
+
+// Update active state based on current route
+watch(() => route.path, (newPath) => {
+  menuItems.value.forEach(item => {
+    item.active = item.route === newPath
+  })
+}, { immediate: true })
 
 // Alignment profile saved from Alineacion page
 const alignmentProfile = computed(() => {
@@ -190,12 +206,12 @@ const activeAstral = ref(null)
 
         <div class="user-profile" @click="logout">
           <div class="user-avatar">
-            <img src="https://ui-avatars.com/api/?name=Julian+Vane&background=fff&color=0f0c29" alt="User" />
+            <img :src="`https://ui-avatars.com/api/?name=${user?.nombre || 'User'}&background=fff&color=0f0c29`" alt="User" />
             <div class="status-indicator"></div>
           </div>
           <div class="user-info">
-            <p class="user-name">{{ user?.name || 'JULIÁN VANE' }}</p>
-            <p class="user-role">{{ user?.role || 'BUSCADOR NIVEL 11' }}</p>
+            <p class="user-name">{{ user?.nombre }}</p>
+            <p class="user-role">{{ user?.role }}</p>
           </div>
         </div>
       </div>
@@ -225,7 +241,7 @@ const activeAstral = ref(null)
       <!-- DASHBOARD BODY -->
       <div class="dashboard-body">
         <div class="welcome-section">
-          <h2 class="welcome-title">SALUDOS, <span class="highlight">{{ user?.name?.split(' ')[0] || 'JULIÁN' }}</span></h2>
+          <h2 class="welcome-title">SALUDOS, <span class="highlight">{{ user?.nombre?.split(' ')[0] || 'VIAJERO' }}</span></h2>
           <div class="title-divider">
             <span class="divider-line"></span>
             <p class="welcome-subtitle">Las constelaciones se alinean para tu expansión creativa hoy.</p>
@@ -616,17 +632,20 @@ const activeAstral = ref(null)
 }
 
 .top-header {
-  position: sticky;
+  position: fixed;
   top: 0;
+  right: 0;
+  width: calc(100% - 280px);
   z-index: 50;
   padding: 1.5rem 4rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  background: rgba(15, 12, 41, 0.4);
+  background: rgba(15, 12, 41, 0.2);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  box-sizing: border-box;
 }
 
 .astro-data {
@@ -686,7 +705,7 @@ const activeAstral = ref(null)
 
 /* BODY */
 .dashboard-body {
-  padding: 3rem 4rem;
+  padding: 10rem 4rem 3rem;
   max-width: 1200px;
 }
 

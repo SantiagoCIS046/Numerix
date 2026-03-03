@@ -2,50 +2,68 @@ import { createRouter, createWebHistory } from "vue-router";
 import AuthView from "../views/Login.vue";
 import PagPrincipal from "../views/PagPrincipal.vue";
 import Alineacion from "../views/Alineacion.vue";
+import Lecturas from "../views/Lecturas.vue";
+import CartaNatal from "../views/CartaNatal.vue";
+import Compatibilidad from "../views/Compatibilidad.vue";
+import Horoscopo from "../views/Horoscopo.vue";
+import Revelacion from "../views/Revelacion.vue";
+import FullReport from "../views/FullReport.vue";
 
 const routes = [
   {
     path: "/",
-    redirect: () => {
-      const token = localStorage.getItem("token");
-      return token ? "/home" : "/auth";
-    },
+    redirect: "/home",
   },
   {
     path: "/auth",
     name: "Auth",
     component: AuthView,
-    meta: { guestOnly: true },
   },
   {
     path: "/home",
     name: "Home",
     component: PagPrincipal,
-    meta: { requiresAuth: true },
   },
   {
     path: "/alineacion",
     name: "Alineacion",
     component: Alineacion,
-    meta: { requiresAuth: true },
+  },
+  {
+    path: "/lecturas",
+    name: "Lecturas",
+    component: Lecturas,
+  },
+  {
+    path: "/carta-natal",
+    name: "CartaNatal",
+    component: CartaNatal,
+  },
+  {
+    path: "/compatibilidad",
+    name: "Compatibilidad",
+    component: Compatibilidad,
+  },
+  {
+    path: "/horoscopo",
+    name: "Horoscopo",
+    component: Horoscopo,
+  },
+  {
+    path: "/revelacion",
+    name: "revelacion",
+    component: Revelacion,
+  },
+  {
+    path: "/informe-personal",
+    name: "FullReport",
+    component: FullReport,
   },
 ];
 
 const router = createRouter({
   history: createWebHistory(),
   routes,
-});
-
-router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem("token");
-
-  if (to.meta.requiresAuth && !token) {
-    return next("/auth");
-  }
-  if (to.meta.guestOnly && token) {
-    return next("/home");
-  }
-  next();
 });
 
 export default router;

@@ -31,3 +31,25 @@ export const authService = {
     });
   },
 };
+
+// ─────────────────────────────────────────
+// LECTURAS — /api/lecturas
+// ─────────────────────────────────────────
+export const lecturasService = {
+  /**
+   * Obtener todas las lecturas
+   * GET /api/lecturas
+   */
+  getAll() {
+    return httpClient.get("/lecturas", true);
+  },
+
+  /**
+   * Obtener lectura por ID
+   * GET /api/lecturas/:id
+   */
+  getById(id) {
+    return httpClient.get(`/lecturas/${id}`, true);
+  },
+};
+

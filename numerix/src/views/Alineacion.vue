@@ -1,7 +1,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from '@/composables/useI18n'
 
+const { t } = useI18n()
 const router = useRouter()
 const isFromHome = ref(false)
 
@@ -95,6 +97,20 @@ function handleSubmit() {
   }, 2000)
 }
 
+const showCountryDropdown = ref(false)
+const selectedCountryObj = computed(() => {
+  return countries.find(c => c.code === formData.value.country) || countries[0]
+})
+
+function toggleCountryDropdown() {
+  showCountryDropdown.value = !showCountryDropdown.value
+}
+
+function selectCountry(code) {
+  formData.value.country = code
+  showCountryDropdown.value = false
+}
+
 function resetForm() {
   formData.value = {
     fullName: loggedUser?.name || loggedUser?.nombre || '',
@@ -105,6 +121,7 @@ function resetForm() {
     cosmicVision: '',
     country: 'CO'
   }
+  showCountryDropdown.value = false
 }
 </script>
 
@@ -131,8 +148,8 @@ function resetForm() {
           <span class="logo-icon">✨</span>
         </div>
         <div class="brand-info">
-          <h1 class="brand-title">ALINEACIÓN DE ALMA</h1>
-          <p class="brand-subtitle">SECUENCIA DE CALIBRACIÓN CÓSMICA</p>
+          <h1 class="brand-title">{{ t('alignment.title') }}</h1>
+          <p class="brand-subtitle">{{ t('alignment.subtitle') }}</p>
         </div>
       </div>
       <div class="header-right">
@@ -158,7 +175,7 @@ function resetForm() {
     <!-- MAIN CONTENT -->
     <main class="alignment-content">
       <div class="form-title-group">
-        <h2 class="main-title">INGRESA TUS COORDENADAS CELESTIALES</h2>
+        <h2 class="main-title">{{ t('alignment.mainTitle') }}</h2>
         <p class="main-subtitle">Para alinear tu espíritu con los movimientos astrales, debemos mapear tu posición única en la línea de tiempo universal.</p>
       </div>
 
@@ -168,7 +185,7 @@ function resetForm() {
           <!-- NAME, DATE, TIME -->
           <div class="input-section grid-3">
             <div class="form-group full-width">
-              <label>NOMBRE COMPLETO</label>
+              <label>{{ t('alignment.fullName') }}</label>
               <input
                 type="text"
                 v-model="formData.fullName"
@@ -178,7 +195,7 @@ function resetForm() {
             </div>
 
             <div class="form-group">
-              <label class="field-label">FECHA DE NACIMIENTO</label>
+              <label class="field-label">{{ t('alignment.birthDate') }}</label>
               <div class="input-with-icon">
                 <input
                   id="birthDate"
@@ -190,7 +207,7 @@ function resetForm() {
             </div>
 
             <div class="form-group">
-              <label class="field-label">HORA DE NACIMIENTO <span class="optional-tag">(OPCIONAL)</span></label>
+              <label class="field-label">{{ t('alignment.birthTime') }} <span class="optional-tag">(OPCIONAL)</span></label>
               <div class="input-with-icon">
                 <input
                   id="birthTime"
@@ -205,14 +222,14 @@ function resetForm() {
 
           <!-- SECTION I: PATH -->
           <div class="form-section">
-            <h3 class="section-num">I. <span class="section-text">¿Hacia qué camino celestial gravita tu espíritu naturalmente?</span></h3>
+            <h3 class="section-num">I. <span class="section-text">{{ t('alignment.path') }}</span></h3>
             <div class="path-toggle">
               <button 
                 type="button"
                 :class="['path-btn', { active: formData.path === 'solar' }]"
                 @click="formData.path = 'solar'"
               >
-                <span class="path-label">CAMINO SOLAR DE LA CREACIÓN</span>
+                <span class="path-label">{{ t('alignment.pathSolar') }}</span>
                 <span class="path-icon">⚙️</span>
               </button>
               <button 
@@ -220,7 +237,7 @@ function resetForm() {
                 :class="['path-btn', { active: formData.path === 'lunar' }]"
                 @click="formData.path = 'lunar'"
               >
-                <span class="path-label">CAMINO LUNAR DE LA REFLEXIÓN</span>
+                <span class="path-label">{{ t('alignment.pathLunar') }}</span>
                 <span class="path-icon">🌙</span>
               </button>
             </div>
@@ -228,7 +245,7 @@ function resetForm() {
 
           <!-- SECTION II: AURA -->
           <div class="form-section">
-            <h3 class="section-num">II. <span class="section-text">Define la densidad actual del aura de tu alma</span></h3>
+            <h3 class="section-num">II. <span class="section-text">{{ t('alignment.aura') }}</span></h3>
             <div class="aura-grid">
               <div 
                 v-for="option in auraOptions" 
@@ -245,7 +262,7 @@ function resetForm() {
           </div>
           <!-- SECTION III: VISION -->
           <div class="form-section">
-            <h3 class="section-num">III. <span class="section-text">Describe tu visión de la convergencia cósmica definitiva.</span></h3>
+            <h3 class="section-num">III. <span class="section-text">{{ t('alignment.vision') }}</span></h3>
             <div class="textarea-container">
               <textarea 
                 v-model="formData.cosmicVision" 
@@ -261,13 +278,34 @@ function resetForm() {
             <h3 class="section-num">IV. <span class="section-text">¿Desde qué coordenadas terrestres emite tu alma su señal?</span></h3>
             <div class="country-selection">
               <div class="form-group full-width">
-                <label>ORIGEN TERRESTRE (PAÍS)</label>
-                <div class="input-with-icon">
-                  <select v-model="formData.country" class="cosmic-input country-select">
-                    <option v-for="c in countries" :key="c.code" :value="c.code">
-                      {{ c.flag }} {{ c.name }}
-                    </option>
-                  </select>
+                <label>{{ t('alignment.origin') }}</label>
+                <div class="custom-dropdown-container">
+                  <button 
+                    type="button" 
+                    class="cosmic-dropdown-trigger" 
+                    @click="toggleCountryDropdown"
+                  >
+                    <span class="selected-val">
+                      <span class="flag">{{ selectedCountryObj.flag }}</span>
+                      {{ selectedCountryObj.name }}
+                    </span>
+                    <span class="arrow" :class="{ rotated: showCountryDropdown }">▼</span>
+                  </button>
+                  
+                  <transition name="slide-up">
+                    <div v-if="showCountryDropdown" class="cosmic-options-list">
+                      <div 
+                        v-for="c in countries" 
+                        :key="c.code" 
+                        class="cosmic-option"
+                        :class="{ active: formData.country === c.code }"
+                        @click="selectCountry(c.code)"
+                      >
+                        <span class="flag">{{ c.flag }}</span>
+                        {{ c.name }}
+                      </div>
+                    </div>
+                  </transition>
                 </div>
               </div>
             </div>
@@ -280,12 +318,12 @@ function resetForm() {
         <div class="status-msg">ESTADO: <span :class="statusClass">{{ formStatus }}</span></div>
 
         <button class="btn-primary-stellar" @click="handleSubmit">
-          <span class="btn-text">ALINEAR CON LAS ESTRELLAS</span>
+          <span class="btn-text">{{ t('alignment.alignBtn') }}</span>
           <span class="btn-star-icon">★</span>
         </button>
 
         <button class="btn-reset" @click="resetForm">
-          <span class="reset-icon">↺</span> REINICIAR PROTOCOLO DE ALINEACIÓN
+          <span class="reset-icon">↺</span> {{ t('alignment.resetBtn') }}
         </button>
       </footer>
     </main>
@@ -522,6 +560,8 @@ function resetForm() {
   padding: 4rem;
   margin-bottom: 3rem;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  position: relative;
+  z-index: 10;
 }
 
 .cosmic-form {
@@ -569,6 +609,116 @@ function resetForm() {
   appearance: none;
   -webkit-appearance: none;
   width: 100%;
+}
+
+/* CUSTOM DROPDOWN */
+.custom-dropdown-container {
+  position: relative;
+  width: 100%;
+  z-index: 20;
+}
+
+.cosmic-dropdown-trigger {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 0.85rem 1.2rem;
+  color: #fff;
+  font-size: 0.95rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-family: 'Outfit', sans-serif;
+}
+
+.cosmic-dropdown-trigger:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.selected-val {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.flag {
+  font-size: 1.2rem;
+}
+
+.arrow {
+  font-size: 0.7rem;
+  opacity: 0.5;
+  transition: transform 0.3s ease;
+}
+
+.arrow.rotated {
+  transform: rotate(180deg);
+}
+
+.cosmic-options-list {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 100%;
+  background: rgba(15, 20, 35, 0.98);
+  backdrop-filter: blur(25px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  max-height: 250px;
+  overflow-y: auto;
+  z-index: 2000;
+  padding: 0.5rem;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(99, 102, 241, 0.1);
+}
+
+.cosmic-option {
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.cosmic-option:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+}
+
+.cosmic-option.active {
+  background: rgba(99, 102, 241, 0.15);
+  color: #fff;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+/* Scrollbar styling for dropdown */
+.cosmic-options-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.cosmic-options-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.cosmic-options-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+/* Transition */
+.slide-up-enter-active, .slide-up-leave-active {
+  transition: all 0.3s ease;
+}
+.slide-up-enter-from, .slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
 }
 
 .grid-3 {

@@ -2,6 +2,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import Galaxy from '../components/Galaxy.vue'
+import { useI18n } from '../composables/useI18n'
+
+const { t } = useI18n()
 
 const router = useRouter()
 const generating = ref(true)
@@ -14,25 +17,25 @@ const user = computed(() => {
   const alignmentData = alignment ? JSON.parse(alignment) : null
   
   return {
-    nombre: alignmentData?.fullName || userData?.nombre || userData?.name || 'VIAJERO ASTRAL',
-    role: userData?.role || 'BUSCADOR CÓSMICO'
+    nombre: alignmentData?.fullName || userData?.nombre || userData?.name || t('report.defaults.name'),
+    role: userData?.role || t('report.defaults.role')
   }
 })
 
-const reportData = ref({
+const reportData = computed(() => ({
   vibracion_maestra: 33,
-  resumen_almas: 'Tu esencia vibra en una frecuencia de liderazgo espiritual y construcción material. El alineamiento actual favorece la expansión de tu red de influencia.',
+  resumen_almas: t('report.defaults.summary'),
   pilares: [
-    { title: 'IDENTIDAD', value: 'Solar', icon: '☀️', desc: 'Núcleo de vitalidad dominante.' },
-    { title: 'CAMINO', value: 'Evolutivo', icon: '🏹', desc: 'Dirección de alma para este ciclo.' },
-    { title: 'FRECUENCIA', value: 'Elevada', icon: '✨', desc: 'Nivel del campo electromagnético.' },
+    { title: t('report.pillars.identity.title'), value: t('report.pillars.identity.value'), icon: '☀️', desc: t('report.pillars.identity.desc') },
+    { title: t('report.pillars.path.title'), value: t('report.pillars.path.value'), icon: '🏹', desc: t('report.pillars.path.desc') },
+    { title: t('report.pillars.freq.title'), value: t('report.pillars.freq.value'), icon: '✨', desc: t('report.pillars.freq.desc') },
   ],
   modulos_detalle: [
-    { id: 'numerologia', title: 'Matriz Numerológica', content: 'Tus números base (3, 7, 11) indican un periodo de transmutación kármica a través del conocimiento.' },
-    { id: 'astrologia', title: 'Pulso Planetario', content: 'Júpiter en conjunción con tu casa de la abundancia sugiere un flujo de prosperidad inesperado.' },
-    { id: 'aura', title: 'Estado del Aura', content: 'Tu aura presenta tonalidades índigo con destellos dorados, indicando una protección etérea activa.' },
+    { id: 'numerologia', title: t('report.modules.numerology.title'), content: t('report.modules.numerology.content') },
+    { id: 'astrologia', title: t('report.modules.astrology.title'), content: t('report.modules.astrology.content') },
+    { id: 'aura', title: t('report.modules.aura.title'), content: t('report.modules.aura.content') },
   ]
-})
+}))
 
 onMounted(() => {
   const interval = setInterval(() => {
@@ -58,7 +61,7 @@ function showAlert(message, type = 'info') {
 }
 
 function printReport() { 
-  showAlert('Preparando transmisión de datos para PDF...', 'success')
+  showAlert(t('report.alerts.preparing'), 'success')
   setTimeout(() => {
     window.print() 
   }, 1000)
@@ -92,23 +95,23 @@ function printReport() {
           <div class="ring"></div>
           <div class="core">✨</div>
         </div>
-        <h2>TEJIENDO TU MAPA DEL DESTINO</h2>
+        <h2>{{ t('report.overlay.title') }}</h2>
         <div class="progress-bar-container">
           <div class="progress-bar-fill" :style="{ width: reportProgress + '%' }"></div>
         </div>
-        <p class="progress-text">{{ reportProgress }}% - Sincronizando registros akásicos</p>
+        <p class="progress-text">{{ reportProgress }}% - {{ t('report.overlay.sync') }}</p>
       </div>
     </div>
 
     <div v-else class="report-content animate-in">
       <header class="report-header">
         <div class="header-left">
-          <button class="back-btn" @click="goBack">← VOLVER</button>
-          <div class="logo">ASTRAL PRESTIGE</div>
+          <button class="back-btn" @click="goBack">{{ t('report.header.back') }}</button>
+          <div class="logo">{{ t('report.header.logo') }}</div>
         </div>
         <div class="header-right">
           <span class="report-id">ID: #AST-{{ Date.now().toString().slice(-6) }}</span>
-          <button class="print-btn" @click="printReport">DESCARGAR PDF 📥</button>
+          <button class="print-btn" @click="printReport">{{ t('report.header.download') }}</button>
         </div>
       </header>
 
@@ -116,9 +119,9 @@ function printReport() {
         <section class="hero-summary">
           <div class="hero-blur"></div>
           <div class="user-intro">
-            <p class="tag">INFORME PERSONAL EXCLUSIVO</p>
+            <p class="tag">{{ t('report.hero.tag') }}</p>
             <h1>{{ user?.nombre }}</h1>
-            <div class="vibration-badge">VIBRACIÓN MAESTRA: {{ reportData.vibracion_maestra }}</div>
+            <div class="vibration-badge">{{ t('report.hero.vibration') }} {{ reportData.vibracion_maestra }}</div>
           </div>
           <div class="summary-box">
              <p>{{ reportData.resumen_almas }}</p>
@@ -150,13 +153,13 @@ function printReport() {
 
         <section class="certification">
           <div class="cert-seal">💠</div>
-          <p>Este informe ha sido generado bajo las leyes de la geometría sagrada y la resonancia estelar.</p>
-          <div class="signature">Consejo de Astralis</div>
+          <p>{{ t('report.certification.desc') }}</p>
+          <div class="signature">{{ t('report.certification.signature') }}</div>
         </section>
       </main>
 
       <footer class="report-footer">
-        <a href="#" @click.prevent="showAlert('Tu destino está encriptado con protocolos de clase S.', 'info')" style="color: inherit; text-decoration: none;">© 2024 Astralis Advanced Analytics. Todos los derechos cósmicos reservados.</a>
+        <a href="#" @click.prevent="showAlert(t('report.alerts.encrypted'), 'info')" style="color: inherit; text-decoration: none;">{{ t('report.footer') }}</a>
       </footer>
     </div>
   </div>

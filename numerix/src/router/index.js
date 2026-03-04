@@ -11,6 +11,7 @@ import FullReport from "../views/FullReport.vue";
 import PlanesSubscripcion from "../views/PlanesSubscripcion.vue";
 import HistoriaEstelar from "../views/HistoriaEstelar.vue";
 import MetodosPago from "../views/MetodosPago.vue";
+import HistorialPagos from "../views/HistorialPagos.vue";
 
 const routes = [
   {
@@ -76,6 +77,16 @@ const routes = [
     path: "/pagos",
     name: "MetodosPago",
     component: MetodosPago,
+  },
+  {
+    path: "/historial-pagos",
+    name: "HistorialPagos",
+    component: HistorialPagos,
+  },
+  {
+    path: "/configuracion",
+    name: "Configuracion",
+    component: () => import("../views/ConfiguracionAstral.vue"),
   },
 ];
 

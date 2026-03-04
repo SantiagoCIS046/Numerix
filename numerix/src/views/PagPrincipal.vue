@@ -1,7 +1,11 @@
 <script setup>
 import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useI18n } from '@/composables/useI18n'
 import SistemaSolar from '@/components/SistemaSolar.vue'
+import AnimatedList from '@/components/AnimatedList.vue'
+
+const { t } = useI18n()
 
 const router = useRouter()
 const route = useRoute()
@@ -19,21 +23,18 @@ const user = computed(() => {
 })
 
 const menuItems = ref([
-  { icon: '🪄', label: 'INICIO', route: '/home' },
-  { icon: '✨', label: 'LECTURAS', route: '/lecturas' },
-  { icon: '⏳', label: 'CRONOLOGÍA', route: '/historia' },
+  { icon: '🪄', label: t('nav.home').toUpperCase(), route: '/home' },
+  { icon: '✨', label: t('nav.predictions').toUpperCase(), route: '/lecturas' },
+  { icon: '⏳', label: t('nav.history').toUpperCase(), route: '/historia' },
   { icon: '🌍', label: 'COMUNIDAD' },
-  { icon: '✨', label: 'ALINEACIÓN', route: '/alineacion' },
+  { icon: '✨', label: t('alignment.title'), route: '/alineacion' },
   { icon: '🎯', label: 'REVELACIÓN', route: '/revelacion' },
-  { icon: '⚙️', label: 'CONFIGURACIÓN' },
+  { icon: '⚙️', label: t('nav.settings').toUpperCase(), route: '/configuracion' },
 ])
 
-// Update active state based on current route
-watch(() => route.path, (newPath) => {
-  menuItems.value.forEach(item => {
-    item.active = item.route === newPath
-  })
-}, { immediate: true })
+const activeIndex = computed(() => {
+  return menuItems.value.findIndex(item => item.route === route.path)
+})
 
 // Alignment profile saved from Alineacion page
 const alignmentProfile = computed(() => {
@@ -43,17 +44,17 @@ const alignmentProfile = computed(() => {
 
 const astronomicalData = computed(() => [
   {
-    label: 'CAMINO CELESTIAL',
+    label: t('alignment.path').toUpperCase(),
     value: alignmentProfile.value?.path === 'lunar' ? 'CAMINO_LUNAR' : 'CAMINO_SOLAR',
     icon: alignmentProfile.value?.path === 'lunar' ? '🌙' : '☀️'
   },
   {
-    label: 'DENSIDAD DEL AURA',
+    label: t('home.widgets.aura'),
     value: (alignmentProfile.value?.auraDensity || 'FLUIDA').toUpperCase(),
     icon: { eterea: '☁️', fluida: '🌊', cristalina: '💎', nebulosa: '🌫️' }[alignmentProfile.value?.auraDensity] || '✨'
   },
   {
-    label: 'FECHA DE NACIMIENTO',
+    label: t('alignment.birthDate').toUpperCase(),
     value: alignmentProfile.value?.birthDate || 'NO_REGISTRADA',
     icon: '📅'
   },
@@ -82,7 +83,7 @@ const compatPool = [
 
 const modules = ref([
   {
-    title: 'VIBRACIÓN',
+    title: t('home.widgets.vibrate').toUpperCase(),
     icon: '☀️',
     ...pick(vibracionPool),
     action: 'VER_ÓRBITA',
@@ -90,7 +91,7 @@ const modules = ref([
     id: 'vibracion'
   },
   {
-    title: 'MISIÓN DE VIDA',
+    title: t('home.widgets.destiny').toUpperCase(),
     icon: '🧠',
     ...pick(misionPool),
     action: 'ESCANEO_PROFUNDO',
@@ -98,7 +99,7 @@ const modules = ref([
     id: 'mision'
   },
   {
-    title: 'COMPATIBILIDAD',
+    title: t('home.widgets.reading').toUpperCase(),
     icon: '👥',
     ...pick(compatPool),
     action: 'VER_SINCRO',
@@ -122,9 +123,10 @@ function showAlert(message, type = 'info') {
 }
 
 function handleNavClick(item) {
+  showNotifications.value = false // Close notifications dropdown
   if (item.route) {
     router.push({ path: item.route, state: { fromHome: item.route === '/alineacion' } })
-  } else {
+  } else if (item.label) {
     showAlert(`El módulo ${item.label} se está sincronizando con los servidores de Andrómeda. Disponible pronto.`, 'info')
   }
 }
@@ -168,11 +170,76 @@ const clockTime = computed(() => {
 // Determine cosmic label from hour
 const zenithLabel = computed(() => {
   const h = now.value.getHours()
-  if (h >= 5 && h < 12) return 'AMANECER'
-  if (h >= 12 && h < 17) return 'CÉNIT'
-  if (h >= 17 && h < 21) return 'OCASO'
-  return 'NADIR'
+  if (h >= 5 && h < 12) return t('home.zenith.morning') || 'AMANECER'
+  if (h >= 12 && h < 17) return t('home.zenith.noon') || 'CÉNIT'
+  if (h >= 17 && h < 21) return t('home.zenith.sunset') || 'OCASO'
+  return t('home.zenith.nadir') || 'NADIR'
 })
+
+const dashboardSections = [
+  { id: 'welcome', type: 'welcome' },
+  { id: 'featured', type: 'featured' },
+  { id: 'modules', type: 'modules' },
+  { id: 'geo', type: 'geo' },
+  { id: 'profile', type: 'profile', condition: () => alignmentProfile.value }
+]
+
+const visibleSections = computed(() => {
+  return dashboardSections.filter(s => !s.condition || s.condition())
+})
+
+const fullSidebarItems = computed(() => [
+  { id: 'side-header', type: 'header' },
+  ...menuItems.value.map((item, idx) => ({ ...item, id: `nav-${idx}`, type: 'nav', originalIndex: idx })),
+  { id: 'side-footer', type: 'footer' }
+])
+
+// Notification System
+const showNotifications = ref(false)
+const notifications = ref([
+  {
+    id: 1,
+    title: 'PAGO PROCESADO',
+    desc: 'Tu suscripción Premium "ALINEACIÓN TOTAL" está activa. ✨',
+    time: 'Hace 2 min',
+    unread: true,
+    icon: '💳',
+    type: 'payment'
+  },
+  {
+    id: 2,
+    title: 'BIENVENIDO AL NODO',
+    desc: '¡Explora tus nuevas lecturas astrales personalizadas! 🧭',
+    time: 'Hace 1 hora',
+    unread: true,
+    icon: '✨',
+    type: 'system'
+  },
+  {
+    id: 3,
+    title: 'MÓDULO DESBLOQUEADO',
+    desc: 'Geometría Sagrada Nivel 2 ya está disponible. ▲',
+    time: 'Hace 3 horas',
+    unread: false,
+    icon: '🪐',
+    type: 'update'
+  }
+])
+
+const unreadCount = computed(() => notifications.value.filter(n => n.unread).length)
+
+const toggleNotifications = () => {
+  showNotifications.value = !showNotifications.value
+}
+
+const markAsRead = (id) => {
+  const notif = notifications.value.find(n => n.id === id)
+  if (notif) notif.unread = false
+}
+
+const markAllRead = () => {
+  notifications.value.forEach(n => n.unread = false)
+}
 
 // Astral items
 const astralItems = [
@@ -210,52 +277,61 @@ const activeAstral = ref(null)
 
     <!-- SIDEBAR -->
     <aside class="sidebar">
-      <div class="sidebar-header">
-        <div class="logo-container" @click="router.push('/home')" style="cursor: pointer;">
-          <div class="logo-inner">
-            <span class="logo-spark">✨</span>
+      <AnimatedList
+        :items="fullSidebarItems"
+        :showGradients="true"
+        :enableArrowNavigation="true"
+        :displayScrollbar="false"
+        :initialSelectedIndex="activeIndex + 1"
+        class-name="full-sidebar-list"
+        item-class-name="sidebar-animated-item"
+        @itemSelected="(item) => item.type === 'nav' && handleNavClick(item)"
+      >
+        <template #default="{ item, index }">
+          <!-- SIDEBAR HEADER -->
+          <div v-if="item.type === 'header'" class="sidebar-header">
+            <div class="logo-container" @click="router.push('/home')" style="cursor: pointer;">
+              <div class="logo-inner">
+                <span class="logo-spark">✨</span>
+              </div>
+            </div>
+            <h1 class="sidebar-brand" @click="router.push('/home')" style="cursor: pointer;">ASTRA</h1>
+            <p class="sidebar-tagline">{{ t('nav.tagline') }}</p>
           </div>
-        </div>
-        <h1 class="sidebar-brand" @click="router.push('/home')" style="cursor: pointer;">ASTRA</h1>
-        <p class="sidebar-tagline">NODO CELESTIAL</p>
-      </div>
 
-      <nav class="sidebar-nav">
-        <div 
-          v-for="item in menuItems" 
-          :key="item.label"
-          :class="['nav-item', { active: item.active }]"
-          @click="handleNavClick(item)"
-        >
-          <span class="nav-icon">{{ item.icon }}</span>
-          <span class="nav-label">{{ item.label }}</span>
-        </div>
-      </nav>
-
-      <div class="sidebar-footer">
-        <div class="premium-card">
-          <p class="premium-title">ACCESO INFINITO</p>
-          <p class="premium-desc">Desbloquea el mapa cósmico y los senderos estelares de 2024.</p>
-          <button class="btn-premium" @click="router.push('/suscripcion')">SUBIR AL NIVEL PREMIUM</button>
-        </div>
-
-        <div class="user-profile" @click="logout" title="Cerrar Conexión">
-          <div class="user-avatar">
-            <img :src="`https://ui-avatars.com/api/?name=${user?.nombre || 'User'}&background=fff&color=0f0c29`" alt="User" />
-            <div class="status-indicator"></div>
+          <!-- SIDEBAR NAV ITEMS -->
+          <div v-else-if="item.type === 'nav'" :class="['nav-item-animated', { active: item.originalIndex === activeIndex }]">
+            <span class="nav-icon">{{ item.icon }}</span>
+            <span class="nav-label">{{ item.label }}</span>
           </div>
-          <div class="user-info">
-            <p class="user-name">{{ user?.nombre }}</p>
-            <p class="user-role">{{ user?.role }}</p>
+
+          <!-- SIDEBAR FOOTER -->
+          <div v-else-if="item.type === 'footer'" class="sidebar-footer">
+            <div class="premium-card">
+              <p class="premium-title">{{ t('nav.premiumTitle') }}</p>
+              <p class="premium-desc">{{ t('nav.premiumDesc') }}</p>
+              <button class="btn-premium" @click="router.push('/suscripcion')">{{ t('nav.premiumBtn') }}</button>
+            </div>
+
+            <div class="user-profile" @click="logout" title="Cerrar Conexión">
+              <div class="user-avatar">
+                <img :src="`https://ui-avatars.com/api/?name=${user?.nombre || 'User'}&background=fff&color=0f0c29`" alt="User" />
+                <div class="status-indicator"></div>
+              </div>
+              <div class="user-info">
+                <p class="user-name">{{ user?.nombre }}</p>
+                <p class="user-role">{{ user?.role }}</p>
+              </div>
+              <span class="logout-icon" :title="t('nav.logout')">⏻</span>
+            </div>
           </div>
-          <span class="logout-icon">⏻</span>
-        </div>
-      </div>
+        </template>
+      </AnimatedList>
     </aside>
 
     <!-- MAIN CONTENT -->
     <main class="main-content">
-      <!-- HEADER -->
+      <!-- HEADER (RESTORED TO FIXED) -->
       <header class="top-header">
         <div class="astro-data">
           <div v-for="data in astronomicalData" :key="data.label" class="astro-item">
@@ -267,135 +343,165 @@ const activeAstral = ref(null)
           </div>
         </div>
         <div class="header-actions">
-          <button class="btn-notification" @click="showAlert('Tus notificaciones están siendo procesadas por el Nodo 4', 'info')">
-            <span class="notif-icon">🔔</span>
-            <div class="notif-badge"></div>
-          </button>
+          <div class="notif-wrapper">
+            <button class="btn-notification" @click="toggleNotifications">
+              <span class="notif-icon">🔔</span>
+              <div v-if="unreadCount > 0" class="notif-badge">{{ unreadCount }}</div>
+            </button>
+
+            <!-- Notifications Dropdown -->
+            <Transition name="fade-slide">
+              <div v-if="showNotifications" class="notifications-dropdown">
+                <div class="notif-header">
+                  <h3>{{ t('nav.notifications') }}</h3>
+                  <span class="notif-mark-all" @click="markAllRead">{{ t('nav.markAll') }}</span>
+                </div>
+                <div class="notif-list">
+                  <div 
+                    v-for="notif in notifications" 
+                    :key="notif.id" 
+                    :class="['notif-item', { unread: notif.unread }]"
+                    @click="markAsRead(notif.id)"
+                  >
+                    <div class="notif-item-icon">{{ notif.icon }}</div>
+                    <div class="notif-item-content">
+                      <p class="notif-item-title">{{ notif.title }}</p>
+                      <p class="notif-item-desc">{{ notif.desc }}</p>
+                      <span class="notif-item-time">{{ notif.time }}</span>
+                    </div>
+                    <div v-if="notif.unread" class="unread-dot"></div>
+                  </div>
+                </div>
+              </div>
+            </Transition>
+          </div>
         </div>
       </header>
 
-      <!-- DASHBOARD BODY -->
+      <!-- DASHBOARD BODY (RESTORED TO STANDARD SCROLL) -->
       <div class="dashboard-body">
-        <div class="welcome-section">
-          <h2 class="welcome-title">SALUDOS, <span class="highlight">{{ user?.nombre?.split(' ')[0] || 'VIAJERO' }}</span></h2>
-          <div class="title-divider">
-            <span class="divider-line"></span>
-            <p class="welcome-subtitle">Las constelaciones se alinean para tu expansión creativa hoy.</p>
-            <span class="divider-line"></span>
-          </div>
-        </div>
-
-        <!-- FEATURED CARD -->
-        <div class="featured-card">
-          <div class="card-glow"></div>
-          <div class="card-content">
-            <span class="card-tag">ILUMINACIÓN DORADA</span>
-            <h3 class="card-title">MAPEA LA CONSTELACIÓN COMPLETA DE TU DESTINO</h3>
-            <p class="card-desc">
-              Desbloquea las cartas de retorno solar avanzadas y los ciclos planetarios que definen tu evolución personal para la próxima década.
-            </p>
-            <button class="btn-revelar" @click="revealDestiny">
-              REVELAR DESTINO <span class="btn-icon">🧭</span>
-            </button>
-          </div>
-          <div class="card-visual">
-            <div class="galaxy-viz"></div>
-          </div>
-        </div>
-
-        <!-- MODULES -->
-        <div class="modules-section">
-          <h4 class="section-title">▲ MÓDULOS CÓSMICOS</h4>
-          <div class="modules-grid">
-            <div
-              v-for="mod in modules"
-              :key="mod.title"
-              class="module-card"
-              :style="{ animationDelay: mod.delay }"
-            >
-              <div class="module-icon-container">
-                <span class="module-icon">{{ mod.icon }}</span>
-              </div>
-              <h5 class="module-title">{{ mod.title }}</h5>
-              <p class="module-desc">{{ mod.desc }}</p>
-              <span class="module-action" @click="openModal(mod)">{{ mod.action }}</span>
+        <div class="scroll-container">
+          <!-- WELCOME SECTION -->
+          <div class="welcome-section">
+            <h2 class="welcome-title">{{ t('home.welcomeTitle') }} <span class="highlight">{{ user?.nombre?.split(' ')[0] || t('home.highlight') }}</span></h2>
+            <div class="title-divider">
+              <span class="divider-line"></span>
+              <p class="welcome-subtitle">{{ t('home.welcomeSubtitle') }}</p>
+              <span class="divider-line"></span>
             </div>
           </div>
-        </div>
 
-        <!-- GEOMETRÍA ASTRAL CARD -->
-        <div class="geo-card">
-          <div class="geo-left">
-            <h3 class="geo-title"><span class="geo-bar"></span> GEOMETRÍA_ASTRAL</h3>
-            <div class="geo-items">
+          <!-- FEATURED CARD -->
+          <div class="featured-card">
+            <div class="card-glow"></div>
+            <div class="card-content">
+              <span class="card-tag">{{ t('home.featuredTag') }}</span>
+              <h3 class="card-title">{{ t('home.featuredTitle') }}</h3>
+              <p class="card-desc">
+                {{ t('home.featuredDesc') }}
+              </p>
+              <button class="btn-revelar" @click="revealDestiny">
+                {{ t('home.revelBtn') }} <span class="btn-icon">🧭</span>
+              </button>
+            </div>
+            <div class="card-visual">
+              <div class="galaxy-viz"></div>
+            </div>
+          </div>
+
+          <!-- MODULES -->
+          <div class="modules-section">
+            <h4 class="section-title">{{ t('home.cosmicModules') }}</h4>
+            <div class="modules-grid">
               <div
-                v-for="item in astralItems"
-                :key="item.title"
-                class="geo-item"
-                @click="activeAstral = item"
+                v-for="mod in modules"
+                :key="mod.title"
+                class="module-card"
+                :style="{ animationDelay: mod.delay }"
               >
-                <div class="geo-icon-ring">{{ item.icon }}</div>
-                <div class="geo-item-body">
-                  <p class="geo-item-title">{{ item.title }}</p>
-                  <p class="geo-item-desc">{{ item.desc }}</p>
+                <div class="module-icon-container">
+                  <span class="module-icon">{{ mod.icon }}</span>
+                </div>
+                <h5 class="module-title">{{ mod.title }}</h5>
+                <p class="module-desc">{{ mod.desc }}</p>
+                <span class="module-action" @click="openModal(mod)">{{ mod.action }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- GEOMETRÍA ASTRAL CARD -->
+          <div class="geo-card">
+            <div class="geo-left">
+              <h3 class="geo-title"><span class="geo-bar"></span> {{ t('home.geoTitle') }}</h3>
+              <div class="geo-items">
+                <div
+                  v-for="item in astralItems"
+                  :key="item.title"
+                  class="geo-item"
+                  @click="activeAstral = item"
+                >
+                  <div class="geo-icon-ring">{{ item.icon }}</div>
+                  <div class="geo-item-body">
+                    <p class="geo-item-title">{{ item.title }}</p>
+                    <p class="geo-item-desc">{{ item.desc }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="geo-right">
+              <div class="clock-outer">
+                <div class="clock-ring-roman">
+                  <span class="roman r3">III</span>
+                  <span class="roman r7">VII</span>
+                  <span class="roman r9">IX</span>
+                </div>
+                <div class="clock-inner">
+                  <span class="clock-time">{{ clockTime }}</span>
+                  <span class="clock-label">{{ zenithLabel }}</span>
                 </div>
               </div>
             </div>
           </div>
-          <div class="geo-right">
-            <div class="clock-outer">
-              <div class="clock-ring-roman">
-                <span class="roman r3">III</span>
-                <span class="roman r7">VII</span>
-                <span class="roman r9">IX</span>
+
+          <!-- COSMIC PROFILE CARD -->
+          <div v-if="alignmentProfile" class="cosmic-profile-section">
+            <h4 class="section-title">{{ t('home.profileTitle') }}</h4>
+            <div class="cosmic-profile-card">
+              <div class="profile-grid">
+                <div class="profile-item">
+                  <span class="profile-label">NOMBRE</span>
+                  <span class="profile-value">{{ alignmentProfile.fullName }}</span>
+                </div>
+                <div class="profile-item">
+                  <span class="profile-label">FECHA DE NACIMIENTO</span>
+                  <span class="profile-value">{{ alignmentProfile.birthDate }}</span>
+                </div>
+                <div v-if="alignmentProfile.birthTime" class="profile-item">
+                  <span class="profile-label">HORA DE NACIMIENTO</span>
+                  <span class="profile-value">{{ alignmentProfile.birthTime }}</span>
+                </div>
+                <div class="profile-item">
+                  <span class="profile-label">CAMINO CELESTIAL</span>
+                  <span class="profile-value path-badge">
+                    {{ pathLabels[alignmentProfile.path]?.icon }}
+                    {{ pathLabels[alignmentProfile.path]?.label }}
+                  </span>
+                </div>
+                <div class="profile-item">
+                  <span class="profile-label">DENSIDAD DEL AURA</span>
+                  <span class="profile-value aura-badge">
+                    {{ auraLabels[alignmentProfile.auraDensity]?.icon }}
+                    {{ auraLabels[alignmentProfile.auraDensity]?.label }}
+                  </span>
+                </div>
               </div>
-              <div class="clock-inner">
-                <span class="clock-time">{{ clockTime }}</span>
-                <span class="clock-label">{{ zenithLabel }}</span>
+              <div v-if="alignmentProfile.cosmicVision" class="vision-block">
+                <span class="profile-label">VISIÓN CÓSMICA</span>
+                <p class="vision-text">{{ alignmentProfile.cosmicVision }}</p>
               </div>
             </div>
           </div>
         </div>
-
-        <!-- COSMIC PROFILE CARD (from Alineacion) -->
-        <div v-if="alignmentProfile" class="cosmic-profile-section">
-          <h4 class="section-title">✨ PERFIL CÓSMICO</h4>
-          <div class="cosmic-profile-card">
-            <div class="profile-grid">
-              <div class="profile-item">
-                <span class="profile-label">NOMBRE</span>
-                <span class="profile-value">{{ alignmentProfile.fullName }}</span>
-              </div>
-              <div class="profile-item">
-                <span class="profile-label">FECHA DE NACIMIENTO</span>
-                <span class="profile-value">{{ alignmentProfile.birthDate }}</span>
-              </div>
-              <div v-if="alignmentProfile.birthTime" class="profile-item">
-                <span class="profile-label">HORA DE NACIMIENTO</span>
-                <span class="profile-value">{{ alignmentProfile.birthTime }}</span>
-              </div>
-              <div class="profile-item">
-                <span class="profile-label">CAMINO CELESTIAL</span>
-                <span class="profile-value path-badge">
-                  {{ pathLabels[alignmentProfile.path]?.icon }}
-                  {{ pathLabels[alignmentProfile.path]?.label }}
-                </span>
-              </div>
-              <div class="profile-item">
-                <span class="profile-label">DENSIDAD DEL AURA</span>
-                <span class="profile-value aura-badge">
-                  {{ auraLabels[alignmentProfile.auraDensity]?.icon }}
-                  {{ auraLabels[alignmentProfile.auraDensity]?.label }}
-                </span>
-              </div>
-            </div>
-            <div v-if="alignmentProfile.cosmicVision" class="vision-block">
-              <span class="profile-label">VISIÓN CÓSMICA</span>
-              <p class="vision-text">{{ alignmentProfile.cosmicVision }}</p>
-            </div>
-          </div>
-        </div>
-
       </div>
     </main>
 
@@ -408,7 +514,7 @@ const activeAstral = ref(null)
               <span class="modal-icon">{{ activeModal.icon }}</span>
             </div>
             <div>
-              <p class="modal-tag">MÓDULO CÓSMICO</p>
+              <p class="modal-tag">{{ t('home.modalTag') }}</p>
               <h2 class="modal-title">{{ activeModal.title }}</h2>
             </div>
           </div>
@@ -418,7 +524,7 @@ const activeAstral = ref(null)
           <div class="modal-footer">
             <span class="modal-action-label">{{ activeModal.action }}</span>
             <button class="modal-close-btn" @click="closeModal">
-              ✕ CERRAR
+              ✕ {{ t('home.closeBtn') }}
             </button>
           </div>
         </div>
@@ -451,36 +557,32 @@ const activeAstral = ref(null)
   border-right: 1px solid rgba(255, 255, 255, 0.04);
   display: flex;
   flex-direction: column;
-  padding: 2.5rem 0;
+  padding: 0; /* AnimatedList will have internals */
   z-index: 100;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  overflow-y: auto;
-  overflow-x: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+  overflow: hidden; /* Prevent dual scroll */
 }
 
-.sidebar::-webkit-scrollbar {
-  width: 4px;
+.full-sidebar-list {
+  height: 100vh;
 }
 
-.sidebar::-webkit-scrollbar-track {
-  background: transparent;
+:deep(.full-sidebar-list .animated-list-scroll) {
+  max-height: none !important;
+  height: 100vh !important;
+  padding: 2.5rem 0.5rem 2.5rem !important;
+  box-sizing: border-box;
 }
 
-.sidebar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-}
-
-.sidebar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+.sidebar-animated-item {
+  width: 100%;
 }
 
 .sidebar-header {
   text-align: center;
-  margin-bottom: 3rem;
+  margin-bottom: 2rem;
+  padding: 0 1rem;
 }
 
 .logo-container {
@@ -527,11 +629,16 @@ const activeAstral = ref(null)
   margin-top: 0.4rem;
 }
 
-.sidebar-nav {
-  padding: 0 1rem;
+.sidebar-nav-container {
+  padding: 0 0.5rem;
+  margin-bottom: 1rem;
 }
 
-.nav-item {
+.cosmic-nav-list {
+  background: transparent;
+}
+
+.nav-item-animated {
   display: flex;
   align-items: center;
   gap: 1.2rem;
@@ -540,12 +647,17 @@ const activeAstral = ref(null)
   color: rgba(255, 255, 255, 0.5);
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  margin-bottom: 0.5rem;
 }
 
-.nav-item.active {
+.nav-item-animated.active {
   background: rgba(201, 169, 110, 0.05);
   color: #c9a96e;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.nav-item-animated:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.03);
+  color: #fff;
 }
 
 .nav-icon {
@@ -558,12 +670,59 @@ const activeAstral = ref(null)
   letter-spacing: 1.5px;
 }
 
-.nav-item:hover {
-  background: rgba(255, 255, 255, 0.03);
-  color: #fff;
-  transform: translateX(5px);
+/* Override AnimatedList default item styles for sidebar */
+:deep(.sidebar-animated-item) {
+  padding: 0 !important;
+  background: transparent !important;
+  border-radius: 16px !important;
 }
 
+:deep(.full-sidebar-list .top-gradient) {
+  height: 100px !important;
+  background: linear-gradient(to bottom, #0f0c29 0%, transparent 100%) !important;
+  z-index: 10;
+}
+
+:deep(.full-sidebar-list .bottom-gradient) {
+  height: 120px !important;
+  background: linear-gradient(to top, #0f0c29 20%, transparent 100%) !important;
+  z-index: 10;
+}
+
+.dashboard-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Let AnimatedList handle scrolling */
+}
+
+.main-animated-container {
+  height: 100%;
+}
+
+:deep(.main-animated-container .animated-list-scroll) {
+  max-height: none !important;
+  height: calc(100vh - 80px); /* Adjust for header */
+  padding: 0 4rem 10rem !important;
+}
+
+.main-animated-section {
+  margin-bottom: 2rem;
+}
+
+:deep(.main-animated-container .top-gradient) {
+  height: 80px !important;
+  background: linear-gradient(to bottom, #0f0c29 0%, transparent 100%) !important;
+  z-index: 10;
+}
+
+:deep(.main-animated-container .bottom-gradient) {
+  height: 150px !important;
+  background: linear-gradient(to top, #0f0c29 20%, transparent 100%) !important;
+  z-index: 10;
+}
+
+/* sidebar-footer and other styles below... */
 .sidebar-footer {
   margin-top: auto;
   padding: 0 1.5rem;
@@ -712,7 +871,7 @@ const activeAstral = ref(null)
   display: flex;
   flex-direction: column;
   height: 100vh;
-  overflow-y: auto;
+  overflow: hidden;
   position: relative;
   z-index: 1;
   margin-left: 280px;
@@ -733,6 +892,35 @@ const activeAstral = ref(null)
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   box-sizing: border-box;
+}
+
+.dashboard-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding-top: 80px; /* Header space */
+  overflow: hidden;
+}
+
+.scroll-container {
+  height: 100%;
+  overflow-y: auto;
+  padding: 2.5rem 4rem 10rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+.scroll-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scroll-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
 }
 
 .astro-data {
@@ -779,21 +967,150 @@ const activeAstral = ref(null)
   justify-content: center;
 }
 
+.notif-wrapper {
+  position: relative;
+}
+
 .notif-badge {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: -2px;
+  right: -2px;
+  background: #c9a96e;
+  color: #0f0c29;
+  font-size: 0.6rem;
+  font-weight: 800;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #0f0c29;
+  box-shadow: 0 0 10px rgba(201, 169, 110, 0.5);
+}
+
+.notifications-dropdown {
+  position: absolute;
+  top: calc(100% + 1rem);
+  right: 0;
+  width: 320px;
+  background: rgba(15, 12, 41, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(201, 169, 110, 0.2);
+  border-radius: 20px;
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.notif-header {
+  padding: 1.2rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.notif-header h3 {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: #c9a96e;
+  margin: 0;
+}
+
+.notif-mark-all {
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.notif-mark-all:hover {
+  color: #fff;
+}
+
+.notif-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.notif-item {
+  display: flex;
+  gap: 1rem;
+  padding: 1.2rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+}
+
+.notif-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.notif-item.unread {
+  background: rgba(201, 169, 110, 0.02);
+}
+
+.notif-item-icon {
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.notif-item-content {
+  flex: 1;
+}
+
+.notif-item-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 0.2rem;
+  letter-spacing: 0.5px;
+}
+
+.notif-item-desc {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.4;
+  margin: 0 0 0.4rem;
+}
+
+.notif-item-time {
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.3);
+  text-transform: uppercase;
+}
+
+.unread-dot {
   width: 8px;
   height: 8px;
   background: #c9a96e;
   border-radius: 50%;
-  box-shadow: 0 0 10px rgba(201, 169, 110, 0.8);
+  position: absolute;
+  top: 1.5rem;
+  right: 1.2rem;
+  box-shadow: 0 0 10px rgba(201, 169, 110, 0.6);
 }
 
-/* BODY */
-.dashboard-body {
-  padding: 10rem 4rem 3rem;
-  max-width: 1200px;
+/* Transitions */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fade-slide-enter-from,
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-10px) scale(0.95);
 }
 
 .welcome-section {

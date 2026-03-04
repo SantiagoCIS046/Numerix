@@ -1,8 +1,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from '@/composables/useI18n'
 import { lecturasService } from '../services/api.js'
 import Galaxy from '../components/Galaxy.vue'
+
+const { t } = useI18n()
 
 const router = useRouter()
 const readings = ref([])
@@ -21,12 +24,12 @@ const user = computed(() => {
   }
 })
 
-const navLinks = [
-  { label: 'Lectura Diaria', path: '/lecturas', active: true },
-  { label: 'Carta Natal', path: '/carta-natal', active: false },
-  { label: 'Compatibilidad', path: '/compatibilidad', active: false },
+const navLinks = computed(() => [
+  { label: t('nav.predictions'), path: '/lecturas', active: true },
+  { label: t('nav.chart'), path: '/carta-natal', active: false },
+  { label: t('nav.compat'), path: '/compatibilidad', active: false },
   { label: 'Horóscopo', path: '/horoscopo', active: false },
-]
+])
 
 function goTo(path) {
   router.push(path)
@@ -37,35 +40,35 @@ function generateReport() {
 }
 
 // Fallback data in case API fails or is empty
-const defaultReading = {
+const defaultReading = computed(() => ({
   numero: '7',
-  titulo: 'El Buscador de la Verdad',
-  descripcion: 'La energía de hoy invita a la introspección, el análisis profundo y una conexión con los reinos invisibles del universo.',
-  consejo_texto: 'El número 7 representa el puente entre lo material y lo espiritual. En este día, la alineación cósmica favorece a quienes miran bajo la superficie. No es un día para multitudes ruidosas o actividad bulliciosa, sino para la quietud del alma. Tu mente analítica se agudiza hoy. Problemas complejos que antes parecían insuperables comenzarán a revelar sus patrones. Confía en tu intuición, ya que está vibrando a una frecuencia superior a tu razonamiento lógico.',
+  titulo: t('lectures.defaultReading.titulo'),
+  descripcion: t('lectures.defaultReading.descripcion'),
+  consejo_texto: t('lectures.defaultReading.consejo'),
   frecuencia: '528HZ',
   frase_guia: '"La verdad no se encuentra en el ruido, sino en el eco de tu propio corazón."',
   fase_lunar: 'GIBOSA MENGUANTE',
   planeta_activo: 'NEPTUNO',
   nivel_suerte: 'EQUILIBRADO',
   influencia_solar: 'MODERADA'
-}
+}))
 
-const currentReading = ref(defaultReading)
+const currentReading = ref({ ...defaultReading.value })
 
-const advisoryChecklist = ref([
+const advisoryChecklist = computed(() => [
   { 
-    title: 'Abraza la Soledad', 
-    desc: 'Dedica al menos 30 minutos al silencio para escuchar tu brújula interna.', 
+    title: t('lectures.checklist.0.title'), 
+    desc: t('lectures.checklist.0.desc'), 
     checked: true 
   },
   { 
-    title: 'Cuestiona las Suposiciones', 
-    desc: 'Una verdad que has sostenido puede estar lista para evolucionar. Observa objetivamente.', 
+    title: t('lectures.checklist.1.title'), 
+    desc: t('lectures.checklist.1.desc'), 
     checked: true 
   },
   { 
-    title: 'Evita las Prisas', 
-    desc: 'La energía de hoy es lenta y deliberada. Forzar resultados provocará fricción.', 
+    title: t('lectures.checklist.2.title'), 
+    desc: t('lectures.checklist.2.desc'), 
     checked: false 
   },
 ])
@@ -136,7 +139,7 @@ function showAlert(message, type = 'info') {
       <div class="nav-left">
         <button class="nav-back-btn" @click="goBack">
           <span class="back-arrow">←</span>
-          <span class="back-text">VOLVER</span>
+          <span class="back-text">{{ t('nav.back') }}</span>
         </button>
         <div class="nav-logo" @click="goBack">
           <span class="logo-icon">✨</span>
@@ -161,7 +164,7 @@ function showAlert(message, type = 'info') {
           </div>
           <span class="user-name-mini">{{ user?.nombre }}</span>
         </div>
-        <button class="premium-btn" @click="navigateTo('/suscripcion')">PREMIUM</button>
+        <button class="premium-btn" @click="navigateTo('/suscripcion')">{{ t('nav.premium') }}</button>
       </div>
     </header>
 
@@ -170,14 +173,14 @@ function showAlert(message, type = 'info') {
       <!-- Loading State -->
       <div v-if="loading" class="loading-overlay">
         <div class="lds-hourglass"></div>
-        <p>Sincronizando con el cosmos...</p>
+        <p>{{ t('lectures.loading') }}</p>
       </div>
 
       <div v-else>
         <!-- HERO -->
         <section class="hero-section">
           <div class="hero-glow"></div>
-          <p class="hero-tag">LA VIBRACIÓN DEL AHORA</p>
+          <p class="hero-tag">{{ t('lectures.heroTag') }}</p>
           <div class="hero-number-container">
             <h1 class="hero-number">{{ currentReading.numero }}</h1>
             <div class="number-rings"></div>
@@ -193,16 +196,16 @@ function showAlert(message, type = 'info') {
             <div class="card-header">
               <div class="icon-box">📱</div>
               <div class="header-text">
-                <h3>Consejo Diario</h3>
-                <span class="sub-tag">GUÍA ASTRAL</span>
+                <h3>{{ t('lectures.dailyAdvice') }}</h3>
+                <span class="sub-tag">{{ t('lectures.astralGuide') }}</span>
               </div>
             </div>
             <div class="card-body">
               <p>{{ currentReading.consejo_texto }}</p>
             </div>
             <div class="card-footer">
-              <span class="footer-stat">FRECUENCIA: {{ currentReading.frecuencia }}</span>
-              <a href="#" class="footer-link" @click.prevent="showAlert('Análisis profundo calculándose en los servidores...', 'info')">Leer análisis completo →</a>
+              <span class="footer-stat">{{ t('lectures.freq') }}: {{ currentReading.frecuencia }}</span>
+              <a href="#" class="footer-link" @click.prevent="showAlert(t('lectures.fullAnalysis'), 'info')">{{ t('lectures.fullAnalysis') }}</a>
             </div>
           </div>
 
@@ -211,8 +214,8 @@ function showAlert(message, type = 'info') {
             <div class="card-header">
               <div class="icon-box light">💡</div>
               <div class="header-text">
-                <h3>Consejo Diario</h3>
-                <span class="sub-tag">GUÍA ASTRAL</span>
+                <h3>{{ t('lectures.dailyAdvice') }}</h3>
+                <span class="sub-tag">{{ t('lectures.astralGuide') }}</span>
               </div>
             </div>
             <div class="card-body">
@@ -238,7 +241,7 @@ function showAlert(message, type = 'info') {
         <section class="astral-status-grid">
           <!-- Fase Lunar -->
           <div class="status-card">
-            <span class="status-label">FASE LUNAR</span>
+            <span class="status-label">{{ t('lectures.stats.moon') }}</span>
             <div class="standard-status">
               <span class="status-icon">🌙</span>
               <p class="status-value">{{ currentReading.fase_lunar }}</p>
@@ -247,7 +250,7 @@ function showAlert(message, type = 'info') {
 
           <!-- Planeta Activo -->
           <div class="status-card">
-            <span class="status-label">PLANETA ACTIVO</span>
+            <span class="status-label">{{ t('lectures.stats.planet') }}</span>
             <div class="standard-status">
               <span class="status-icon">🌍</span>
               <p class="status-value">{{ currentReading.planeta_activo }}</p>
@@ -256,7 +259,7 @@ function showAlert(message, type = 'info') {
 
           <!-- Nivel de Suerte -->
           <div class="status-card">
-            <span class="status-label">NIVEL DE SUERTE</span>
+            <span class="status-label">{{ t('lectures.stats.luck') }}</span>
             <div class="luck-content">
                <div class="luck-dots">
                  <span 
@@ -265,13 +268,13 @@ function showAlert(message, type = 'info') {
                   :class="['dot', { active: i === 2 }]"
                  ></span>
                </div>
-               <p class="status-value luck-text">{{ currentReading.nivel_suerte }} de Suerte</p>
+               <p class="status-value luck-text">{{ currentReading.nivel_suerte }} {{ t('lectures.stats.luckSuffix') }}</p>
             </div>
           </div>
 
           <!-- Influencia Solar -->
           <div class="status-card">
-            <span class="status-label">INFLUENCIA SOLAR</span>
+            <span class="status-label">{{ t('lectures.stats.solar') }}</span>
             <div class="standard-status">
               <span class="status-icon">☀️</span>
               <p class="status-value">{{ currentReading.influencia_solar }}</p>
@@ -283,7 +286,7 @@ function showAlert(message, type = 'info') {
       <!-- CTA -->
       <div class="cta-container">
         <button class="btn-full-report" @click="generateReport">
-          GENERAR INFORME PERSONAL COMPLETO <span class="btn-wand">🪄</span>
+          {{ t('lectures.cta') }} <span class="btn-wand">🪄</span>
         </button>
       </div>
     </main>
@@ -292,12 +295,12 @@ function showAlert(message, type = 'info') {
     <!-- FOOTER -->
     <footer class="page-footer">
       <div class="footer-left">
-        © 2024 Colectivo de Numerología Astralis. Todos los derechos reservados.
+        © 2024 {{ t('lectures.footer') }}
       </div>
       <div class="footer-right">
-        <a href="#" @click.prevent="showAlert('Tu privacidad está protegida por la ley del vacío.', 'info')">Política de Privacidad</a>
-        <a href="#" @click.prevent="showAlert('Términos regidos por la sincronía estelar.', 'info')">Términos Cósmicos</a>
-        <a href="#" @click.prevent="showAlert('Enviando señal al Oráculo...', 'success')">Contacto</a>
+        <a href="#" @click.prevent="showAlert(t('lectures.privacy'), 'info')">{{ t('lectures.privacy') }}</a>
+        <a href="#" @click.prevent="showAlert(t('lectures.terms'), 'info')">{{ t('lectures.terms') }}</a>
+        <a href="#" @click.prevent="showAlert(t('lectures.contact'), 'success')">{{ t('lectures.contact') }}</a>
         <button class="share-btn" @click="showAlert('Copiando enlace universal al portapapeles...', 'success')">🔗</button>
       </div>
     </footer>

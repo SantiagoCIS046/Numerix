@@ -1,10 +1,13 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from '@/composables/useI18n'
 import Galaxy from '../components/Galaxy.vue'
 
+const { t } = useI18n()
+
 const router = useRouter()
-const activeCategory = ref('Amor')
+const activeCategory = ref('love')
 
 const user = computed(() => {
   const stored = localStorage.getItem('user')
@@ -19,26 +22,26 @@ const user = computed(() => {
   }
 })
 
-const categories = [
-  { id: 'Amor', icon: '❤️' },
-  { id: 'Trabajo', icon: '💼' },
-  { id: 'Salud', icon: '🌿' },
-  { id: 'Dinero', icon: '💰' },
-]
+const categories = computed(() => [
+  { id: 'love', label: t('horoscope.categories.love'), icon: '❤️' },
+  { id: 'work', label: t('horoscope.categories.work'), icon: '💼' },
+  { id: 'health', label: t('horoscope.categories.health'), icon: '🌿' },
+  { id: 'money', label: t('horoscope.categories.money'), icon: '💰' },
+])
 
-const predictions = {
-  'Amor': 'Las alineaciones de Venus sugieren un periodo de apertura emocional. Si estás en pareja, es momento de renovar compromisos. Si buscas, alguien del pasado podría reaparecer con una nueva perspectiva.',
-  'Trabajo': 'Marte en tu casa del éxito impulsa proyectos estancados. No temas tomar la iniciativa en esa reunión importante. Tu visión clara será recompensada por figuras de autoridad.',
-  'Salud': 'La energía de hoy pide descanso regenerativo. Evita el estrés innecesario y busca contacto con la naturaleza. Un baño de sal marina o meditación antes de dormir será clave.',
-  'Dinero': 'Júpiter protege tus finanzas, pero Mercurio advierte sobre gastos impulsivos. Una oportunidad de inversión a largo plazo se presentará el viernes. Analiza los detalles con calma.',
-}
+const predictions = computed(() => ({
+  'love': t('horoscope.predictions.love'),
+  'work': t('horoscope.predictions.work'),
+  'health': t('horoscope.predictions.health'),
+  'money': t('horoscope.predictions.money'),
+}))
 
-const navLinks = [
-  { label: 'Lectura Diaria', path: '/lecturas', active: false },
-  { label: 'Carta Natal', path: '/carta-natal', active: false },
-  { label: 'Compatibilidad', path: '/compatibilidad', active: false },
+const navLinks = computed(() => [
+  { label: t('nav.predictions'), path: '/lecturas', active: false },
+  { label: t('nav.chart'), path: '/carta-natal', active: false },
+  { label: t('nav.compat'), path: '/compatibilidad', active: false },
   { label: 'Horóscopo', path: '/horoscopo', active: true },
-]
+])
 
 function goBack() { router.push('/home') }
 function goTo(path) { router.push(path) }
@@ -74,7 +77,7 @@ function showAlert(message, type = 'info') {
     </div>
     <header class="navbar">
       <div class="nav-left">
-        <button class="nav-back-btn" @click="goBack"><span>←</span> VOLVER</button>
+        <button class="nav-back-btn" @click="goBack"><span>←</span> {{ t('nav.back') }}</button>
         <div class="nav-logo" @click="goBack"><span>✨</span> ASTRALIS</div>
       </div>
       <nav class="nav-center">
@@ -94,8 +97,8 @@ function showAlert(message, type = 'info') {
     <main class="page-content">
       <section class="horoscopo-hero">
         <div class="hero-glow"></div>
-        <p class="hero-tag">PREDICCIÓN DIARIA</p>
-        <h1 class="hero-title">Horóscopo</h1>
+        <p class="hero-tag">{{ t('horoscope.heroTag') }}</p>
+        <h1 class="hero-title">{{ t('horoscope.title') }}</h1>
         <div class="sign-tag">{{ user?.signo || 'Tauro' }}</div>
       </section>
 
@@ -108,28 +111,28 @@ function showAlert(message, type = 'info') {
             @click="activeCategory = cat.id"
           >
             <span class="cat-icon">{{ cat.icon }}</span>
-            <span class="cat-name">{{ cat.id }}</span>
+            <span class="cat-name">{{ cat.label }}</span>
           </button>
         </div>
 
         <div class="prediction-content animate-fade">
           <div class="quote-mark">“</div>
           <p class="prediction-text">{{ predictions[activeCategory] }}</p>
-          <div class="prediction-meta">Vibración del día: <strong>Armonía Celeste</strong></div>
+          <div class="prediction-meta">{{ t('horoscope.vibration') }} <strong>{{ t('horoscope.vibrationVal') }}</strong></div>
         </div>
       </section>
 
       <div class="side-sections">
         <section class="master-advice">
-          <h2 class="section-title">Consejo del Maestro</h2>
+          <h2 class="section-title">{{ t('horoscope.masterAdvice') }}</h2>
           <div class="advice-box">
-             <p>"La paciencia es la forma en que el tiempo rinde culto a la eternidad. No apresures lo que el cosmos está tejiendo a tu favor."</p>
-             <span class="master-sig">- EL GUÍA -</span>
+             <p>{{ t('horoscope.masterQuote') }}</p>
+             <span class="master-sig">{{ t('horoscope.masterSig') }}</span>
           </div>
         </section>
 
         <section class="lucky-numbers">
-          <h2 class="section-title">Números de Poder</h2>
+          <h2 class="section-title">{{ t('horoscope.luckyNumbers') }}</h2>
           <div class="numbers-grid">
             <div class="num-circle">11</div>
             <div class="num-circle">23</div>
@@ -141,8 +144,8 @@ function showAlert(message, type = 'info') {
     </main>
 
     <footer class="page-footer">
-      <div class="footer-left">© 2024 Astralis Daily.</div>
-      <div class="footer-right"><a href="#" @click.prevent="showAlert('Tu destino es privado bajo la ley del Oráculo.', 'info')">Privacidad</a></div>
+      <div class="footer-left">© 2024 {{ t('horoscope.footer') }}</div>
+      <div class="footer-right"><a href="#" @click.prevent="showAlert(t('horoscope.privacyAlert'), 'info')">{{ t('horoscope.privacy') }}</a></div>
     </footer>
   </div>
 </template>

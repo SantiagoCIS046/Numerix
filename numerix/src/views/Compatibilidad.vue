@@ -1,7 +1,10 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from '@/composables/useI18n'
 import Galaxy from '../components/Galaxy.vue'
+
+const { t } = useI18n()
 
 const router = useRouter()
 const syncLoading = ref(false)
@@ -24,12 +27,12 @@ const partner = ref({
   fecha_nacimiento: ''
 })
 
-const navLinks = [
-  { label: 'Lectura Diaria', path: '/lecturas', active: false },
-  { label: 'Carta Natal', path: '/carta-natal', active: false },
-  { label: 'Compatibilidad', path: '/compatibilidad', active: true },
+const navLinks = computed(() => [
+  { label: t('nav.predictions'), path: '/lecturas', active: false },
+  { label: t('nav.chart'), path: '/carta-natal', active: false },
+  { label: t('nav.compat'), path: '/compatibilidad', active: true },
   { label: 'Horóscopo', path: '/horoscopo', active: false },
-]
+])
 
 function handleSync() {
   if (!partner.value.nombre || !partner.value.fecha_nacimiento) return
@@ -41,12 +44,12 @@ function handleSync() {
     syncLoading.value = false
     syncResult.value = {
       score: 87,
-      label: 'SINCRO-ESTELAR ALTA',
-      desc: 'Sus vibraciones resuenan en una frecuencia armónica. Existe una alineación natural entre sus caminos evolutivos.',
+      label: t('compatibility.result.high'),
+      desc: t('compatibility.result.desc'),
       areas: [
-        { name: 'Comunicación', value: 92, icon: '💬' },
-        { name: 'Emoción', value: 78, icon: '❤️' },
-        { name: 'Espiritual', value: 95, icon: '✨' },
+        { name: t('compatibility.result.areas.comm'), value: 92, icon: '💬' },
+        { name: t('compatibility.result.areas.emotion'), value: 78, icon: '❤️' },
+        { name: t('compatibility.result.areas.spirit'), value: 95, icon: '✨' },
       ]
     }
   }, 2500)
@@ -86,7 +89,7 @@ function showAlert(message, type = 'info') {
     </div>
     <header class="navbar">
       <div class="nav-left">
-        <button class="nav-back-btn" @click="goBack"><span>←</span> VOLVER</button>
+        <button class="nav-back-btn" @click="goBack"><span>←</span> {{ t('nav.back') }}</button>
         <div class="nav-logo" @click="goBack"><span>✨</span> ASTRALIS</div>
       </div>
       <nav class="nav-center">
@@ -106,25 +109,25 @@ function showAlert(message, type = 'info') {
     <main class="page-content">
       <section class="sync-hero">
         <div class="hero-glow"></div>
-        <p class="hero-tag">ALINEACIÓN VIBRACIONAL</p>
-        <h1 class="hero-title">Compatibilidad</h1>
-        <p class="hero-desc">Descubre cómo tus números se entrelazan con otra esencia en el tejido cósmico.</p>
+        <p class="hero-tag">{{ t('compatibility.heroTag') }}</p>
+        <h1 class="hero-title">{{ t('compatibility.title') }}</h1>
+        <p class="hero-desc">{{ t('compatibility.desc') }}</p>
       </section>
 
       <div class="sync-grid">
         <!-- Input Form -->
         <section class="sync-card input-section">
-          <h2 class="card-title">Segunda Esencia</h2>
+          <h2 class="card-title">{{ t('compatibility.partnerTitle') }}</h2>
           <div class="form-group">
-            <label>NOMBRE CELESTIAL</label>
-            <input v-model="partner.nombre" type="text" placeholder="Nombre completo" />
+            <label>{{ t('compatibility.nameLabel') }}</label>
+            <input v-model="partner.nombre" type="text" :placeholder="t('compatibility.namePlaceholder')" />
           </div>
           <div class="form-group">
-            <label>FECHA DE ALINEACIÓN</label>
+            <label>{{ t('compatibility.dateLabel') }}</label>
             <input v-model="partner.fecha_nacimiento" type="date" />
           </div>
           <button class="btn-sync" :disabled="syncLoading || !partner.nombre || !partner.fecha_nacimiento" @click="handleSync">
-            <span v-if="!syncLoading">SINCRONIZAR ALMAS ✦</span>
+            <span v-if="!syncLoading">{{ t('compatibility.syncBtn') }}</span>
             <div v-else class="lds-dual-ring"></div>
           </button>
         </section>
@@ -133,7 +136,7 @@ function showAlert(message, type = 'info') {
         <section class="sync-card result-section" :class="{ 'has-result': syncResult }">
           <div v-if="!syncResult && !syncLoading" class="empty-state">
             <div class="empty-icon">🪐</div>
-            <p>Ingresa la esencia del acompañante para iniciar el análisis de sincronía.</p>
+            <p>{{ t('compatibility.emptyText') }}</p>
           </div>
 
           <div v-if="syncLoading" class="syncing-state">
@@ -141,7 +144,7 @@ function showAlert(message, type = 'info') {
               <div class="radar-line"></div>
               <div class="radar-circles"></div>
             </div>
-            <p>Analizando frecuencias compartidas...</p>
+            <p>{{ t('compatibility.syncing') }}</p>
           </div>
 
           <div v-if="syncResult" class="result-content animate-in">
@@ -167,8 +170,8 @@ function showAlert(message, type = 'info') {
     </main>
 
     <footer class="page-footer">
-      <div class="footer-left">© 2024 Astralis Resonance.</div>
-      <div class="footer-right"><a href="#" @click.prevent="showAlert('Tu sincronía es sagrada y privada.', 'info')">Privacidad</a></div>
+      <div class="footer-left">© 2024 {{ t('compatibility.footer') }}</div>
+      <div class="footer-right"><a href="#" @click.prevent="showAlert(t('compatibility.privacyAlert'), 'info')">{{ t('compatibility.privacy') }}</a></div>
     </footer>
   </div>
 </template>

@@ -1,6 +1,9 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
 
 const router = useRouter()
 
@@ -14,22 +17,22 @@ const isSyncing = ref(false)
 const bootstrapAlert = ref({ show: false, message: '', type: 'danger' })
 const selectedPlan = ref(null)
 
-const availablePlans = [
-  { id: 'lunar', name: 'NIVEL LUNAR', priceUSD: 12, icon: '🌙' },
-  { id: 'planetario', name: 'NIVEL PLANETARIO', priceUSD: 34, icon: '🪐' },
-  { id: 'supernova', name: 'NIVEL SUPERNOVA', priceUSD: 88, icon: '⭐' }
-]
+const availablePlans = computed(() => [
+  { id: 'lunar', name: t('subscriptions.plans.lunar.name'), priceUSD: 12, icon: '🌙' },
+  { id: 'planetario', name: t('subscriptions.plans.planetario.name'), priceUSD: 34, icon: '🪐' },
+  { id: 'supernova', name: t('subscriptions.plans.supernova.name'), priceUSD: 88, icon: '⭐' }
+])
 
-const exchangeRates = {
-  'CO': { rate: 3950, symbol: 'COL$', name: 'PESOS COLOMBIANOS' },
-  'ES': { rate: 0.92, symbol: '€', name: 'EUROS' },
-  'EU': { rate: 0.92, symbol: '€', name: 'EUROS' },
-  'MX': { rate: 17.10, symbol: 'MX$', name: 'PESOS MEXICANOS' },
-  'AR': { rate: 840, symbol: 'ARS$', name: 'PESOS ARGENTINOS' },
-  'CL': { rate: 940, symbol: 'CLP$', name: 'PESOS CHILENOS' },
-  'PE': { rate: 3.80, symbol: 'PEN$', name: 'SOLES' },
-  'US': { rate: 1, symbol: 'USD$', name: 'DÓLARES' }
-}
+const exchangeRates = computed(() => ({
+  'CO': { rate: 3950, symbol: 'COL$', name: t('checkout.currencies.CO') },
+  'ES': { rate: 0.92, symbol: '€', name: t('checkout.currencies.ES') },
+  'EU': { rate: 0.92, symbol: '€', name: t('checkout.currencies.EU') },
+  'MX': { rate: 17.10, symbol: 'MX$', name: t('checkout.currencies.MX') },
+  'AR': { rate: 840, symbol: 'ARS$', name: t('checkout.currencies.AR') },
+  'CL': { rate: 940, symbol: 'CLP$', name: t('checkout.currencies.CL') },
+  'PE': { rate: 3.80, symbol: 'PEN$', name: t('checkout.currencies.PE') },
+  'US': { rate: 1, symbol: 'USD$', name: t('checkout.currencies.US') }
+}))
 
 const userAlignment = ref({ country: 'CO' })
 
@@ -41,7 +44,7 @@ function loadUserAlignment() {
 }
 
 const userCurrency = computed(() => {
-  return exchangeRates[userAlignment.value.country] || exchangeRates['US']
+  return exchangeRates.value[userAlignment.value.country] || exchangeRates.value['US']
 })
 
 const currentPlan = ref(null)
@@ -101,7 +104,7 @@ const formattedCardNumber = computed(() => {
   return groups ? groups.join(' ') : cleaned
 })
 
-const displayCardHolder = computed(() => cardHolder.value || 'NOMBRE DEL NAVEGANTE')
+const displayCardHolder = computed(() => cardHolder.value || t('checkout.cardPreview.holder'))
 
 // --- ACTIONS ---
 function showAlert(message, type = 'danger') {
@@ -113,7 +116,7 @@ function showAlert(message, type = 'danger') {
 
 function handleSync() {
   if (!cardHolder.value || !cardNumber.value) {
-    showAlert('Por favor, complete los campos de sincronización astral.')
+    showAlert(t('checkout.alerts.fillFields'))
     return
   }
   
@@ -121,16 +124,37 @@ function handleSync() {
   
   // Simulation of cosmic transaction
   setTimeout(() => {
-    const finalPlan = selectedPlan.value
+    const finalPlan = currentPlan.value
+    if (!finalPlan) {
+      isSyncing.value = false
+      showAlert(t('checkout.alerts.noPlan'))
+      return
+    }
+
+    const newTransaction = {
+      id: crypto.randomUUID(),
+      date: new Date().toISOString(),
+      level: finalPlan.id.charAt(0).toUpperCase() + finalPlan.id.slice(1),
+      name: finalPlan.name,
+      status: 'active',
+      amount: `$${convertedDetails.value.usd}.00`
+    }
+
+    // Update current subscription
     localStorage.setItem('userSubscription', JSON.stringify({
       id: finalPlan.id,
       name: finalPlan.name,
-      date: new Date().toISOString(),
+      date: newTransaction.date,
       status: 'active'
     }))
+
+    // Persist to history array
+    const history = JSON.parse(localStorage.getItem('cosmic_history') || '[]')
+    history.unshift(newTransaction)
+    localStorage.setItem('cosmic_history', JSON.stringify(history))
     
     isSyncing.value = false
-    showAlert('¡Sincronización Exitosa! Tu alma ha ascendido.', 'success')
+    showAlert(t('checkout.alerts.success'), 'success')
     
     setTimeout(() => {
       router.push('/home')
@@ -165,18 +189,18 @@ function goHome() {
     <header class="terminal-header">
       <div class="nav-actions-left">
         <button class="back-btn-minimal" @click="navigateBack">
-          <span class="arrow">←</span> VOLVER A PLANES
+          <span class="arrow">←</span> {{ t('checkout.backBtn') }}
         </button>
       </div>
       <div class="logo" @click="goHome" style="cursor: pointer;">
         <span class="logo-icon">✨</span>
         <div class="logo-text">
-          <h1>TERMINAL CÓSMICA</h1>
-          <p>TRANSACCIÓN ASTRAL ASEGURADA</p>
+          <h1>{{ t('checkout.title') }}</h1>
+          <p>{{ t('checkout.subtitle') }}</p>
         </div>
       </div>
       <div class="status">
-        <span class="status-label">ORIGEN_DETECTADO</span>
+        <span class="status-label">{{ t('checkout.originLabel') }}</span>
         <span class="status-val">{{ userAlignment.country }} // {{ userCurrency.name }} <span class="dot"></span></span>
       </div>
     </header>
@@ -186,7 +210,7 @@ function goHome() {
       <section class="payment-form">
         <!-- PLAN SELECTION IF NONE -->
         <div v-if="!currentPlan" class="plan-picker-overlay">
-          <h3 class="picker-title">SELECCIONA TU DIMENSIÓN</h3>
+          <h3 class="picker-title">{{ t('checkout.pickerTitle') }}</h3>
           <div class="plan-mini-grid">
             <div 
               v-for="plan in availablePlans" 
@@ -203,8 +227,8 @@ function goHome() {
 
         <div v-else class="order-summary-box">
           <div class="summary-header">
-            <span class="header-tag">RESUMEN DE ORDEN</span>
-            <button class="change-plan-btn" @click="changePlan">CAMBIAR</button>
+            <span class="header-tag">{{ t('checkout.summaryTitle') }}</span>
+            <button class="change-plan-btn" @click="changePlan">{{ t('checkout.changeBtn') }}</button>
           </div>
           <div class="summary-content">
             <div class="plan-info-row">
@@ -212,7 +236,7 @@ function goHome() {
               <span class="plan-usd-val">${{ convertedDetails.usd }} USD</span>
             </div>
             <div class="currency-conversion-row">
-              <span class="conv-label">VALOR EN TU MONEDA:</span>
+              <span class="conv-label">{{ t('checkout.localValueLabel') }}</span>
               <div class="conv-val-box">
                 <span class="conv-val">{{ convertedDetails.symbol }} {{ convertedDetails.local }}</span>
                 <select 
@@ -234,61 +258,61 @@ function goHome() {
             :class="['tab', { active: paymentMethod === 'card' }]"
             @click="paymentMethod = 'card'"
           >
-            💳 Tarjeta Astral
+            {{ t('checkout.tabs.card') }}
           </button>
           <button 
             :class="['tab', { active: paymentMethod === 'digital' }]"
             @click="paymentMethod = 'digital'"
           >
-            📱 Billetera Digital
+            {{ t('checkout.tabs.digital') }}
           </button>
         </div>
 
         <div class="form-content">
           <div class="input-group">
-            <label>NOMBRE DE AUTORIDAD DEL NAVEGANTE</label>
+            <label>{{ t('checkout.form.holderLabel') }}</label>
             <div class="input-wrapper">
-              <input type="text" v-model="cardHolder" placeholder="ELARA VANCE" maxlength="25">
+              <input type="text" v-model="cardHolder" :placeholder="t('checkout.form.holderPlaceholder')" maxlength="25">
               <span class="input-icon">👤</span>
             </div>
           </div>
 
           <div class="input-group">
-            <label>ID DE SECUENCIA INTERESTELAR</label>
+            <label>{{ t('checkout.form.cardLabel') }}</label>
             <div class="input-wrapper">
-              <input type="text" v-model="cardNumber" placeholder="XXXX XXXX XXXX XXXX" maxlength="16">
+              <input type="text" v-model="cardNumber" :placeholder="t('checkout.form.cardPlaceholder')" maxlength="16">
               <span class="input-icon">🔑</span>
             </div>
           </div>
 
           <div class="form-row">
             <div class="input-group">
-              <label>LÍMITE TEMPORAL</label>
+              <label>{{ t('checkout.form.expiryLabel') }}</label>
               <div class="input-wrapper">
-                <input type="text" v-model="expiryDate" placeholder="MM/YY" maxlength="5">
+                <input type="text" v-model="expiryDate" :placeholder="t('checkout.form.expiryPlaceholder')" maxlength="5">
                 <span class="input-icon">📅</span>
               </div>
             </div>
             <div class="input-group">
-              <label>CIFRADO DE ACCESO</label>
+              <label>{{ t('checkout.form.cvvLabel') }}</label>
               <div class="input-wrapper">
-                <input type="password" v-model="cvv" placeholder="***" maxlength="3">
+                <input type="password" v-model="cvv" :placeholder="t('checkout.form.cvvPlaceholder')" maxlength="3">
                 <span class="input-icon">🔒</span>
               </div>
             </div>
           </div>
 
           <button class="sync-btn" @click="handleSync" :disabled="isSyncing">
-            <span v-if="!isSyncing">⚡ SINCRONIZAR ACTIVOS</span>
-            <span v-else class="loader">SINCRONIZANDO CON LA RED VESTA...</span>
+            <span v-if="!isSyncing">{{ t('checkout.form.syncBtn') }}</span>
+            <span v-else class="loader">{{ t('checkout.form.syncingBtn') }}</span>
           </button>
 
           <div class="alternative-payments">
-            <p class="alt-label">O VINCULAR VÍA NODO DIGITAL</p>
+            <p class="alt-label">{{ t('checkout.alt.label') }}</p>
             <div class="alt-grid">
-              <div class="alt-item" @click="showAlert('Apple Pay se está sincronizando con tu ID Estelar.', 'info')"><span>🍎</span> APPLE PAY</div>
-              <div class="alt-item" @click="showAlert('Billetera Universal en fase de acoplamiento.', 'info')"><span>💳</span> BILLETERA</div>
-              <div class="alt-item" @click="showAlert('Protocolo Cripto Leya-7 activándose.', 'info')"><span>₿</span> CRIPTO</div>
+              <div class="alt-item" @click="showAlert(t('checkout.alt.apple'), 'info')"><span>🍎</span> {{ t('checkout.alt.appleLabel') }}</div>
+              <div class="alt-item" @click="showAlert(t('checkout.alt.wallet'), 'info')"><span>💳</span> {{ t('checkout.alt.walletLabel') }}</div>
+              <div class="alt-item" @click="showAlert(t('checkout.alt.crypto'), 'info')"><span>₿</span> {{ t('checkout.alt.cryptoLabel') }}</div>
             </div>
           </div>
         </div>

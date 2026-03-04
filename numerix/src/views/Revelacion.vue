@@ -1,7 +1,10 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from '@/composables/useI18n'
 import LightPillar from '@/components/LightPillar.vue'
+
+const { t } = useI18n()
 
 const router = useRouter()
 
@@ -9,48 +12,41 @@ const router = useRouter()
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)] }
 
 const lunarPool = [
-  { value: '🌙', sub: 'Creciente' },
-  { value: '🌑', sub: 'Nueva' },
-  { value: '🌕', sub: 'Llena' },
-  { value: '🌓', sub: 'Cuarto Creciente' },
-  { value: '🌗', sub: 'Cuarto Menguante' }
+  { value: '🌙', sub: t('revelation.pools.lunar.creciente') },
+  { value: '🌑', sub: t('revelation.pools.lunar.nueva') },
+  { value: '🌕', sub: t('revelation.pools.lunar.llena') },
+  { value: '🌓', sub: t('revelation.pools.lunar.cuartoCreciente') },
+  { value: '🌗', sub: t('revelation.pools.lunar.cuartoMenguante') }
 ]
 const energyPool = [
-  { value: 'Alta', sub: 'Radiante' },
-  { value: 'Densa', sub: 'Enraizada' },
-  { value: 'Fluida', sub: 'En Flujo' },
-  { value: 'Sutil', sub: 'Etérea' }
+  { value: t('revelation.pools.energy.alta'), sub: t('revelation.pools.energy.radiante') },
+  { value: t('revelation.pools.energy.densa'), sub: t('revelation.pools.energy.enraizada') },
+  { value: t('revelation.pools.energy.fluida'), sub: t('revelation.pools.energy.enFlujo') },
+  { value: t('revelation.pools.energy.sutil'), sub: t('revelation.pools.energy.eterea') }
 ]
 const freqPool = [
-  { value: '528Hz', sub: 'Sana' },
-  { value: '432Hz', sub: 'Cósmica' },
-  { value: '639Hz', sub: 'Conexión' },
-  { value: '852Hz', sub: 'Intuición' }
+  { value: '528Hz', sub: t('revelation.pools.freq.sana') },
+  { value: '432Hz', sub: t('revelation.pools.freq.cosmica') },
+  { value: '639Hz', sub: t('revelation.pools.freq.conexion') },
+  { value: '852Hz', sub: t('revelation.pools.freq.intuicion') }
 ]
 
 const synthPool = [
-  { id: 11, title: 'NÚMERO DEL ALMA', subtitle: 'ESENCIA INTERIOR', desc: 'Refleja tus deseos más profundos y la verdadera naturaleza de tu espíritu.', color: '#6366f1' },
-  { id: 5, title: 'PERSONALIDAD', subtitle: 'IMAGEN EXTERNA', desc: 'Cómo te percibe el mundo y la máscara que muestras ante los demás.', color: '#3b82f6' },
-  { id: 9, title: 'MISIÓN DE VIDA', subtitle: 'HUMANITARIO', desc: 'Tu propósito final es el servicio a la humanidad y la culminación de ciclos.', color: '#4f46e5' },
-  { id: 22, title: 'MAESTRO CONSTRUCTOR', subtitle: 'PODER MATERIAL', desc: 'Capacidad para manifestar grandes visiones en el plano físico.', color: '#8b5cf6' },
-  { id: 7, title: 'SABIDURÍA', subtitle: 'BUSCADOR', desc: 'Análisis profundo y búsqueda de verdades universales.', color: '#06b6d4' }
+  { id: 11, ...t('revelation.pools.synth.soul'), color: '#6366f1' },
+  { id: 5, ...t('revelation.pools.synth.personality'), color: '#3b82f6' },
+  { id: 9, ...t('revelation.pools.synth.mission'), color: '#4f46e5' },
+  { id: 22, ...t('revelation.pools.synth.builder'), color: '#8b5cf6' },
+  { id: 7, ...t('revelation.pools.synth.wisdom'), color: '#06b6d4' }
 ]
 
 const nodesPool = [
-  { label: 'Finanzas', statusPool: ['Próspero', 'Estable', 'En Crecimiento', 'Saneando'], color: '#10b981' },
-  { label: 'Amor', statusPool: ['Estable', 'Vibrante', 'En Armonía', 'En Evolución'], color: '#ef4444' },
-  { label: 'Carrera', statusPool: ['Ascenso', 'Inspiración', 'Manifestación', 'Estabilidad'], color: '#3b82f6' },
-  { label: 'Salud', statusPool: ['Vigorosa', 'En Equilibrio', 'Regeneración', 'Sutil'], color: '#8b5cf6' }
+  { label: t('revelation.pools.nodes.finance.label'), statusPool: t('revelation.pools.nodes.finance.statuses'), color: '#10b981' },
+  { label: t('revelation.pools.nodes.love.label'), statusPool: t('revelation.pools.nodes.love.statuses'), color: '#ef4444' },
+  { label: t('revelation.pools.nodes.career.label'), statusPool: t('revelation.pools.nodes.career.statuses'), color: '#3b82f6' },
+  { label: t('revelation.pools.nodes.health.label'), statusPool: t('revelation.pools.nodes.health.statuses'), color: '#8b5cf6' }
 ]
 
-const oraclePool = [
-  "La confianza en el proceso es tu mayor aliada hoy...",
-  "Mira más allá de lo evidente, lo que buscas está cerca.",
-  "Un ciclo se cierra para dar paso a una luz más brillante.",
-  "Tu intuición es una brújula infalible en este momento.",
-  "La paciencia transformará el hierro en oro.",
-  "Sincroniza tu aliento con el latido del universo."
-]
+const oraclePool = t('revelation.pools.oracle')
 
 // --- STATE ---
 const stats = ref([])
@@ -69,16 +65,16 @@ const user = computed(() => {
   return {
     nombre: alignmentData?.fullName || userData?.nombre || userData?.name || 'SANTIAGO CISNEROS',
     role: userData?.role || 'BUSCADOR CÓSMICO',
-    alignmentStatus: alignmentData ? 'ALINEACIÓN: COMPLETA' : 'ALINEACIÓN: PENDIENTE'
+    alignmentStatus: alignmentData ? t('revelation.statusComplete') : t('revelation.statusPending')
   }
 })
 
 // Interactive Insights
-const satellites = ref([
-  { id: 1, label: 'EXPANSIÓN', message: 'MENSAJE OCULTO: EXPANSIÓN', class: 's-1' },
-  { id: 2, label: 'EQUILIBRIO', message: 'ALINEACIÓN CÓSMICA: EQUILIBRIO', class: 's-2' },
-  { id: 3, label: 'ENERGÍA', message: 'FRECUENCIA ELEVADA: VITALIDAD', class: 's-3' },
-  { id: 4, label: 'VISIÓN', message: 'NODO ACTIVO: TRANSFORMACIÓN', class: 's-4' }
+const satellites = computed(() => [
+  { id: 1, label: t('revelation.sats.expansion.label'), message: t('revelation.sats.expansion.message'), class: 's-1' },
+  { id: 2, label: t('revelation.sats.balance.label'), message: t('revelation.sats.balance.message'), class: 's-2' },
+  { id: 3, label: t('revelation.sats.energy.label'), message: t('revelation.sats.energy.message'), class: 's-3' },
+  { id: 4, label: t('revelation.sats.vision.label'), message: t('revelation.sats.vision.message'), class: 's-4' }
 ])
 
 const activeSatellite = ref(null)
@@ -173,15 +169,15 @@ function showAlert(message, type = 'info') {
     <!-- Header -->
     <header class="rev-header">
       <div class="header-titles">
-        <p class="module-tag">MÓDULO DE INTERACCIÓN</p>
-        <h1 class="main-title">Revelación <span class="highlight">Numérica</span></h1>
+        <p class="module-tag">{{ t('revelation.moduleTag') }}</p>
+        <h1 class="main-title">{{ t('revelation.title') }} <span class="highlight">{{ t('revelation.subtitle') }}</span></h1>
       </div>
       <div class="header-actions">
         <button class="back-btn" @click="goBack">
-          <span class="btn-icon">←</span> VOLVER AL NODO
+          <span class="btn-icon">←</span> {{ t('revelation.backBtn') }}
         </button>
         <button class="icon-btn" @click="goBack"><span class="icon">⚙️</span></button>
-        <button class="icon-btn" @click="showAlert('Sintonizando con el campo de conocimiento universal...', 'info')"><span class="icon">❓</span></button>
+        <button class="icon-btn" @click="showAlert(t('revelation.sintonizando'), 'info')"><span class="icon">❓</span></button>
       </div>
     </header>
 
@@ -204,7 +200,7 @@ function showAlert(message, type = 'info') {
 
           <!-- Interactive Orbs -->
           <div class="orbs-container" :class="{ 'is-active': isLoaded }">
-            <div class="orb center-orb" @mouseenter="activeSatellite = { message: 'TU ESENCIA CENTRAL' }">
+            <div class="orb center-orb" @mouseenter="activeSatellite = { message: t('revelation.essence') }">
               <span class="orb-val">7</span>
               <div class="orb-glow"></div>
             </div>
@@ -232,13 +228,13 @@ function showAlert(message, type = 'info') {
           <div class="vibration-info">
             <span class="vibration-icon">✨</span>
             <div class="vibration-text">
-              <p class="vibration-label">VIBRACIÓN ACTUAL</p>
-              <p class="vibration-desc">"Tu resonancia hoy indica un período de cierre y reflexión profunda. Escucha el silencio entre tus pensamientos."</p>
+              <p class="vibration-label">{{ t('revelation.vibrationLabel') }}</p>
+              <p class="vibration-desc">{{ t('revelation.vibrationDesc') }}</p>
             </div>
           </div>
           <div class="zoom-controls">
-            <button class="zoom-btn" @click="adjustZoom(0.1)" title="Aumentar">+</button>
-            <button class="zoom-btn" @click="adjustZoom(-0.1)" title="Alejar">-</button>
+            <button class="zoom-btn" @click="adjustZoom(0.1)" :title="t('revelation.zoomIn') || '+'">+</button>
+            <button class="zoom-btn" @click="adjustZoom(-0.1)" :title="t('revelation.zoomOut') || '-'">-</button>
           </div>
         </footer>
       </main>
@@ -267,7 +263,7 @@ function showAlert(message, type = 'info') {
 
         <!-- Synthesis Section -->
         <section class="synthesis-section">
-          <h4 class="section-divider">SÍNTESIS CÓSMICA</h4>
+          <h4 class="section-divider">{{ t('revelation.synthTitle') }}</h4>
           <div class="synthesis-cards">
             <div v-for="item in numericalSynthesis" :key="item.title" class="synth-card">
               <div class="synth-header">
@@ -284,7 +280,7 @@ function showAlert(message, type = 'info') {
 
         <!-- Power Nodes -->
         <section class="nodes-section">
-          <h4 class="section-divider">NODOS DE PODER HOY</h4>
+          <h4 class="section-divider">{{ t('revelation.nodesTitle') }}</h4>
           <div class="nodes-grid">
             <div v-for="node in powerNodes" :key="node.label" class="node-card">
               <span class="node-label">{{ node.label }}</span>
@@ -296,11 +292,11 @@ function showAlert(message, type = 'info') {
         <!-- Oracle Action -->
         <section class="oracle-section">
           <div class="oracle-card">
-            <p class="oracle-label">CONSEJO DEL ORÁCULO</p>
+            <p class="oracle-label">{{ t('revelation.oracleLabel') }}</p>
             <p class="oracle-text">"{{ oracleText }}"</p>
           </div>
           <button class="generate-btn" @click="generateNewReading">
-            <span class="btn-icon">🪄</span> GENERAR NUEVA LECTURA
+            <span class="btn-icon">🪄</span> {{ t('revelation.generateBtn') }}
           </button>
         </section>
       </aside>

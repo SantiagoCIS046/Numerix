@@ -1,6 +1,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
 
 const router = useRouter()
 
@@ -16,10 +19,10 @@ const user = computed(() => {
   
   return {
     nombre: alignmentData?.fullName || userData?.nombre || userData?.name || 'SANTIAGO CISNEROS',
-    plan: subData?.name || 'NIVEL LUNAR (BÁSICO)',
+    plan: subData?.name || t('history.stats.planLunar'),
     startDate: subData?.date ? new Date(subData.date).toLocaleDateString() : '03 ENE, 2024',
     rawDate: subData?.date || new Date().toISOString(),
-    alignmentStatus: alignmentData ? 'ALINEACIÓN COMPLETA' : 'ALINEACIÓN PENDIENTE'
+    alignmentStatus: alignmentData ? t('history.stats.complete') : t('history.stats.pending')
   }
 })
 
@@ -29,53 +32,53 @@ const isNewUser = computed(() => {
   return start.toDateString() === today.toDateString()
 })
 
-const timelineEvents = ref([
+const timelineEvents = computed(() => [
   {
     id: 1,
     date: '14 NOV, 2024',
-    type: 'TRÁNSITO',
-    title: 'Umbral del Retorno de Saturno',
-    labels: ['CAMINO DE VIDA 7', 'DOMINANTE 4'],
-    desc: '"La alineación sugiere una profunda reestructuración de las deudas kármicas mientras Saturno entra en tu tercera casa de la sabiduría..."',
+    type: t('history.events.0.type'),
+    title: t('history.events.0.title'),
+    labels: t('history.events.0.labels'),
+    desc: t('history.events.0.desc'),
     active: true
   },
   {
     id: 2,
     date: '28 OCT, 2024',
-    type: 'NUMEROLOGÍA',
-    title: 'El Número Maestro 11',
-    labels: ['NÚCLEO 11', 'VIBRACIÓN ALTA'],
-    desc: '"Se están abriendo portales intuitivos. Su resonancia vibratoria se ha desplazado de la frecuencia material a la espiritual..."',
+    type: t('history.events.1.type'),
+    title: t('history.events.1.title'),
+    labels: t('history.events.1.labels'),
+    desc: t('history.events.1.desc'),
     active: false
   },
   {
     id: 3,
     date: '12 SEP, 2024',
-    type: 'MAPA ASTRAL',
-    title: 'Manifestación Directa de Mercurio',
-    labels: ['MERCURIO 2', 'VOZ CLARA'],
-    desc: '"El trabajo de sombra se completa. Un período de comunicación sin precedentes y éxito contractual comienza ahora..."',
+    type: t('history.events.2.type'),
+    title: t('history.events.2.title'),
+    labels: t('history.events.2.labels'),
+    desc: t('history.events.2.desc'),
     active: false
   },
   {
     id: 4,
     date: '05 AGO, 2024',
-    type: 'SINCRONÍA VITAL',
-    title: 'Convergencia Armónica',
-    labels: ['NÚCLEO ABRL', 'SOLAR 4'],
-    desc: '"Se ha alcanzado el pico de alineación energética. Esto marca el comienzo de su ciclo de destino principal para el año..."',
+    type: t('history.events.3.type'),
+    title: t('history.events.3.title'),
+    labels: t('history.events.3.labels'),
+    desc: t('history.events.3.desc'),
     active: false
   }
 ])
 
-const activeFilter = ref('Todas las Radiaciones')
-const filters = ['Todas las Radiaciones', 'Tránsitos', 'Numerología', 'Mapas']
+const activeFilter = ref(t('history.filters.all'))
+const filters = computed(() => [t('history.filters.all'), t('history.filters.transits'), t('history.filters.numerology'), t('history.filters.maps')])
 const zoomScale = ref(1)
 const isDropdownOpen = ref(false)
 const isEraOpen = ref(false)
 
-const activeEra = ref('Últimos 30 Soles')
-const eraOptions = ['Últimos 7 Soles', 'Últimos 30 Soles', 'Últimos 90 Soles', 'Toda la Historia']
+const activeEra = ref(t('history.filters.sun30'))
+const eraOptions = computed(() => [t('history.filters.sun7'), t('history.filters.sun30'), t('history.filters.sun90'), t('history.filters.allTime')])
 
 function toggleDropdown() {
   isDropdownOpen.value = !isDropdownOpen.value
@@ -101,22 +104,22 @@ const filteredEvents = computed(() => {
   let events = timelineEvents.value
 
   // Alignment Filter
-  if (activeFilter.value !== 'Todas las Radiaciones') {
+  if (activeFilter.value !== t('history.filters.all')) {
     const filterMap = {
-      'Tránsitos': 'TRÁNSITO',
-      'Numerología': 'NUMEROLOGÍA',
-      'Mapas': 'MAPA ASTRAL'
+      [t('history.filters.transits')]: t('history.events.0.type'),
+      [t('history.filters.numerology')]: t('history.events.1.type'),
+      [t('history.filters.maps')]: t('history.events.2.type')
     }
     const targetType = filterMap[activeFilter.value]
     events = events.filter(ev => ev.type === targetType)
   }
 
-  // Era Filter (Simulado con slice para esta demo, en real usaría fechas)
-  if (activeEra.value === 'Últimos 7 Soles') {
+  // Era Filter
+  if (activeEra.value === t('history.filters.sun7')) {
     return events.slice(0, 1)
-  } else if (activeEra.value === 'Últimos 30 Soles') {
+  } else if (activeEra.value === t('history.filters.sun30')) {
     return events.slice(0, 3)
-  } else if (activeEra.value === 'Últimos 90 Soles') {
+  } else if (activeEra.value === t('history.filters.sun90')) {
     return events.slice(0, 4)
   }
 
@@ -156,14 +159,14 @@ function scrollToTimeline() {
       <div class="brand" @click="navigateTo('/home')" style="cursor: pointer;">
         <div class="logo-box">✨</div>
         <div>
-          <h1 class="brand-title">HISTORIA ESTELAR</h1>
-          <p class="brand-sub">CAMINO DE NUMEROLOGÍA ASTRAL</p>
+          <h1 class="brand-title">{{ t('history.title') }}</h1>
+          <p class="brand-sub">{{ t('history.subtitle') }}</p>
         </div>
       </div>
       <nav class="nav">
-        <a href="#" @click.prevent="navigateTo('/home')">PANEL</a>
-        <a href="#" class="active">CRONOLOGÍA</a>
-        <a href="#" @click.prevent="navigateTo('/lecturas')">ARCANOS</a>
+        <a href="#" @click.prevent="navigateTo('/home')">{{ t('history.nav.panel') }}</a>
+        <a href="#" class="active">{{ t('history.nav.chronology') }}</a>
+        <a href="#" @click.prevent="navigateTo('/lecturas')">{{ t('history.nav.arcana') }}</a>
         <div class="user-avatar">
           <img :src="`https://ui-avatars.com/api/?name=${user.nombre}&background=222&color=fff`" alt="User">
         </div>
@@ -173,12 +176,12 @@ function scrollToTimeline() {
     <main class="content">
       <div class="content-header">
         <div>
-          <h2 class="title">Línea de Tiempo <span class="highlight">Cósmica</span></h2>
-          <p class="subtitle">Rastreando su viaje numerológico a través del vacío.</p>
+          <h2 class="title">{{ t('history.timelineTitle') }} <span class="highlight">{{ t('history.timelineHighlight') }}</span></h2>
+          <p class="subtitle">{{ t('history.timelineDesc') }}</p>
         </div>
         <div class="actions">
           <div class="selector">
-            <span class="sel-label">ALINEACIÓN</span>
+            <span class="sel-label">{{ t('history.filters.alignment') }}</span>
             <div class="cosmic-dropdown" :class="{ 'is-open': isDropdownOpen }">
               <div class="dropdown-header" @click="toggleDropdown">
                 <span>{{ activeFilter }}</span>
@@ -197,7 +200,7 @@ function scrollToTimeline() {
             </div>
           </div>
           <div class="selector">
-            <span class="sel-label">ÉPOCA</span>
+            <span class="sel-label">{{ t('history.filters.era') }}</span>
             <div class="cosmic-dropdown" :class="{ 'is-open': isEraOpen }">
               <div class="dropdown-header" @click="toggleEra">
                 <span>{{ activeEra }}</span>
@@ -250,34 +253,31 @@ function scrollToTimeline() {
       <!-- Empty State for New Users -->
       <div v-else class="empty-astral-state">
         <div class="empty-icon">🌑</div>
-        <h3 class="empty-title">EL VACÍO PRIMORDIAL</h3>
-        <p class="empty-desc">
-          Tu historia en ASTRA comienza hoy. En las próximas rotaciones terrestres,<br>
-          tus tránsitos y lecturas aparecerán aquí como constelaciones en el vacío.
-        </p>
-        <button class="generate-btn" @click="navigateTo('/lecturas')">COMENZAR PRIMERA LECTURA</button>
+        <h3 class="empty-title">{{ t('history.empty.title') }}</h3>
+        <p class="empty-desc" v-html="t('history.empty.desc')"></p>
+        <button class="generate-btn" @click="navigateTo('/lecturas')">{{ t('history.empty.btn') }}</button>
       </div>
 
       <div v-if="!isNewUser" class="center-action">
-        <button class="descend-btn" @click="scrollToTimeline">DESCENDER MÁS PROFUNDO EN LA HISTORIA</button>
+        <button class="descend-btn" @click="scrollToTimeline">{{ t('history.descendBtn') }}</button>
       </div>
 
-      <!-- User Stats Floating (Added based on request) -->
+      <!-- User Stats Floating -->
       <div class="user-stats-floating">
         <div class="stats-item">
-          <span class="stats-label">USUARIO</span>
+          <span class="stats-label">{{ t('history.stats.user') }}</span>
           <span class="stats-val">{{ user.nombre }}</span>
         </div>
         <div class="stats-item">
-          <span class="stats-label">PLAN</span>
+          <span class="stats-label">{{ t('history.stats.plan') }}</span>
           <span class="stats-val highlight-gold">{{ user.plan }}</span>
         </div>
         <div class="stats-item">
-          <span class="stats-label">INICIO</span>
+          <span class="stats-label">{{ t('history.stats.start') }}</span>
           <span class="stats-val">{{ user.startDate }}</span>
         </div>
         <div class="stats-item">
-          <span class="stats-label">ESTADO</span>
+          <span class="stats-label">{{ t('history.stats.status') }}</span>
           <span class="stats-val">{{ user.alignmentStatus }}</span>
         </div>
       </div>
@@ -285,14 +285,14 @@ function scrollToTimeline() {
 
     <footer class="footer">
       <div class="footer-left">
-        <p>ALINEACIÓN ACTUAL</p>
-        <p class="footer-highlight">NEPTUNO EN RETRÓGRADO • 24° 12' PI</p>
+        <p>{{ t('history.footer.currentAlign') }}</p>
+        <p class="footer-highlight">{{ t('history.footer.neptune') }}</p>
       </div>
       <div class="footer-links">
-        <a href="#">ÉTICA UNIVERSAL</a>
-        <a href="#">POLÍTICA DEL VACÍO</a>
-        <a href="#">API ASTRAL</a>
-        <p>© 2024 STELLAR NUMEROLOGY CORPS.</p>
+        <a href="#">{{ t('history.footer.ethics') }}</a>
+        <a href="#">{{ t('history.footer.voidPolicy') }}</a>
+        <a href="#">{{ t('history.footer.api') }}</a>
+        <p>© 2024 {{ t('history.footer.corp') }}</p>
       </div>
     </footer>
   </div>

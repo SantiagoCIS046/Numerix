@@ -1,7 +1,10 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from '@/composables/useI18n'
 import Galaxy from '../components/Galaxy.vue'
+
+const { t } = useI18n()
 
 const router = useRouter()
 const loading = ref(true)
@@ -19,29 +22,29 @@ const user = computed(() => {
 })
 
 const natalData = ref({
-  sol: { signo: 'Tauro', grado: '24°', casa: 'Casa IX', desc: 'Tu núcleo de identidad y vitalidad.' },
-  luna: { signo: 'Escorpio', grado: '12°', casa: 'Casa III', desc: 'Tu mundo emocional y subconsciente.' },
-  ascendente: { signo: 'Leo', grado: '05°', casa: 'Casa I', desc: 'La máscara que muestras al mundo.' },
+  sol: { signo: t('natal.signs.tauro'), grado: '24°', casa: 'Casa IX', desc: 'Tu núcleo de identidad y vitalidad.' },
+  luna: { signo: t('natal.signs.escorpio'), grado: '12°', casa: 'Casa III', desc: 'Tu mundo emocional y subconsciente.' },
+  ascendente: { signo: t('natal.signs.leo'), grado: '05°', casa: 'Casa I', desc: 'La máscara que muestras al mundo.' },
   planetas: [
-    { nombre: 'Mercurio', signo: 'Géminis', casa: 'Casa X', icon: '☿' },
-    { nombre: 'Venus', signo: 'Cáncer', casa: 'Casa XI', icon: '♀' },
-    { nombre: 'Marte', signo: 'Aries', casa: 'Casa VIII', icon: '♂' },
-    { nombre: 'Júpiter', signo: 'Sagitario', casa: 'Casa IV', icon: '♃' },
+    { nombre: t('natal.planets.mercurio'), signo: t('natal.signs.geminis'), casa: 'Casa X', icon: '☿' },
+    { nombre: t('natal.planets.venus'), signo: t('natal.signs.cancer'), casa: 'Casa XI', icon: '♀' },
+    { nombre: t('natal.planets.marte'), signo: t('natal.signs.aries'), casa: 'Casa VIII', icon: '♂' },
+    { nombre: t('natal.planets.jupiter'), signo: t('natal.signs.sagitario'), casa: 'Casa IV', icon: '♃' },
   ],
   elementos: [
-    { nombre: 'Fuego', porcentaje: 35, color: '#ff4d4d' },
-    { nombre: 'Tierra', porcentaje: 25, color: '#c9a96e' },
-    { nombre: 'Aire', porcentaje: 20, color: '#4da6ff' },
-    { nombre: 'Agua', porcentaje: 20, color: '#4dffdb' },
+    { nombre: t('natal.elements.fuego'), porcentaje: 35, color: '#ff4d4d' },
+    { nombre: t('natal.elements.tierra'), porcentaje: 25, color: '#c9a96e' },
+    { nombre: t('natal.elements.aire'), porcentaje: 20, color: '#4da6ff' },
+    { nombre: t('natal.elements.agua'), porcentaje: 20, color: '#4dffdb' },
   ]
 })
 
-const navLinks = [
-  { label: 'Lectura Diaria', path: '/lecturas', active: false },
-  { label: 'Carta Natal', path: '/carta-natal', active: true },
-  { label: 'Compatibilidad', path: '/compatibilidad', active: false },
+const navLinks = computed(() => [
+  { label: t('nav.predictions'), path: '/lecturas', active: false },
+  { label: t('nav.chart'), path: '/carta-natal', active: true },
+  { label: t('nav.compat'), path: '/compatibilidad', active: false },
   { label: 'Horóscopo', path: '/horoscopo', active: false },
-]
+])
 
 onMounted(() => {
   setTimeout(() => {
@@ -91,7 +94,7 @@ function goTo(path) {
       <div class="nav-left">
         <button class="nav-back-btn" @click="goBack">
           <span class="back-arrow">←</span>
-          <span class="back-text">VOLVER</span>
+          <span class="back-text">{{ t('nav.back') }}</span>
         </button>
         <div class="nav-logo" @click="goBack">
           <span class="logo-icon">✨</span>
@@ -116,29 +119,29 @@ function goTo(path) {
           </div>
           <span class="user-name-mini">{{ user?.nombre }}</span>
         </div>
-        <button class="premium-btn" @click="goTo('/suscripcion')">PREMIUM</button>
+        <button class="premium-btn" @click="goTo('/suscripcion')">{{ t('nav.premium') }}</button>
       </div>
     </header>
 
     <main class="page-content">
       <div v-if="loading" class="loading-overlay">
         <div class="lds-hourglass"></div>
-        <p>Calculando posiciones estelares...</p>
+        <p>{{ t('natal.loading') }}</p>
       </div>
 
       <div v-else class="content-fade-in">
         <!-- HERO: THE TRIAD -->
         <section class="natal-hero">
           <div class="hero-bg-glow"></div>
-          <p class="hero-tag">TU MAPA DEL CIELO</p>
-          <h1 class="hero-title">Carta Natal</h1>
-          <p class="hero-subtitle">La configuración del cosmos al momento de tu primer aliento.</p>
+          <p class="hero-tag">{{ t('natal.heroTag') }}</p>
+          <h1 class="hero-title">{{ t('natal.title') }}</h1>
+          <p class="hero-subtitle">{{ t('natal.subtitle') }}</p>
 
           <div class="triad-grid">
             <div class="triad-card sun">
               <div class="card-icon">☀️</div>
               <h3>{{ natalData.sol.signo }}</h3>
-              <p class="triad-label">SOL / IDENTIDAD</p>
+              <p class="triad-label">{{ t('natal.triad.sol') }}</p>
               <div class="triad-divider"></div>
               <p class="triad-desc">{{ natalData.sol.desc }}</p>
               <span class="degree">{{ natalData.sol.grado }} - {{ natalData.sol.casa }}</span>
@@ -146,7 +149,7 @@ function goTo(path) {
             <div class="triad-card moon">
               <div class="card-icon">🌙</div>
               <h3>{{ natalData.luna.signo }}</h3>
-              <p class="triad-label">LUNA / EMOCIÓN</p>
+              <p class="triad-label">{{ t('natal.triad.luna') }}</p>
               <div class="triad-divider"></div>
               <p class="triad-desc">{{ natalData.luna.desc }}</p>
               <span class="degree">{{ natalData.luna.grado }} - {{ natalData.luna.casa }}</span>
@@ -154,7 +157,7 @@ function goTo(path) {
             <div class="triad-card asc">
               <div class="card-icon">🏹</div>
               <h3>{{ natalData.ascendente.signo }}</h3>
-              <p class="triad-label">ASCENDENTE / SER</p>
+              <p class="triad-label">{{ t('natal.triad.asc') }}</p>
               <div class="triad-divider"></div>
               <p class="triad-desc">{{ natalData.ascendente.desc }}</p>
               <span class="degree">{{ natalData.ascendente.grado }} - {{ natalData.ascendente.casa }}</span>
@@ -166,7 +169,7 @@ function goTo(path) {
         <div class="details-grid">
           <!-- Elements Section -->
           <section class="elements-card">
-            <h2 class="section-title">Equilibrio Elemental</h2>
+            <h2 class="section-title">{{ t('natal.sections.elements') }}</h2>
             <div class="elements-list">
               <div v-for="elem in natalData.elementos" :key="elem.nombre" class="element-item">
                 <div class="element-header">
@@ -182,7 +185,7 @@ function goTo(path) {
 
           <!-- Planets Section -->
           <section class="planets-card">
-            <h2 class="section-title">Posiciones Planetarias</h2>
+            <h2 class="section-title">{{ t('natal.sections.planets') }}</h2>
             <div class="planets-table">
               <div v-for="planet in natalData.planetas" :key="planet.nombre" class="planet-row">
                 <span class="planet-icon">{{ planet.icon }}</span>
@@ -197,19 +200,19 @@ function goTo(path) {
         <!-- CALL TO ACTION -->
         <section class="evolution-cta">
           <div class="cta-content">
-            <h2>Tu Guía Evolutiva Personalizada</h2>
-            <p>Descubre cómo transitar los mayores retos de tu alma y aprovechar tus dones kármicos en este ciclo.</p>
-            <button class="btn-unlock-full" @click="goTo('/suscripcion')">DESBLOQUEAR INFORME DE 40 PÁGINAS ✦</button>
+            <h2>{{ t('natal.cta.title') }}</h2>
+            <p>{{ t('natal.cta.desc') }}</p>
+            <button class="btn-unlock-full" @click="goTo('/suscripcion')">{{ t('natal.cta.btn') }}</button>
           </div>
         </section>
       </div>
     </main>
 
     <footer class="page-footer">
-      <div class="footer-left">© 2024 Astralis Natal Services.</div>
+      <div class="footer-left">© 2024 {{ t('natal.footer') }}</div>
       <div class="footer-right">
-        <a href="#" @click.prevent="showAlert('Tu mapa estelar está bajo la protección del Guardián del Umbral.', 'info')">Privacidad</a>
-        <a href="#" @click.prevent="showAlert('Acuerdo de resonancia harmónica activa.', 'info')">Ética Astral</a>
+        <a href="#" @click.prevent="showAlert(t('natal.privacyAlert') || 'Privacy', 'info')">{{ t('natal.privacy') }}</a>
+        <a href="#" @click.prevent="showAlert(t('natal.ethicsAlert') || 'Ethics', 'info')">{{ t('natal.ethics') }}</a>
       </div>
     </footer>
   </div>

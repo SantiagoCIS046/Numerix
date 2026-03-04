@@ -1,6 +1,9 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
 
 const router = useRouter()
 const selectedPlanLocal = ref(null)
@@ -14,58 +17,44 @@ function showAlert(message, type = 'info') {
   }, 4000)
 }
 
-const plans = [
+const plans = computed(() => [
   {
     id: 'lunar',
-    name: 'NIVEL LUNAR',
-    code: '(LUNAR)',
+    name: t('subscriptions.plans.lunar.name'),
+    code: t('subscriptions.plans.lunar.code'),
     price: '$12',
     period: '/LUNA',
-    description: 'Primer reflejo: Trabajo de sombras y ciclos lunares básicos para el buscador naciente.',
-    features: [
-      'TRÁNSITOS DIARIOS',
-      'FASE LUNAR PERSONAL',
-      'CARTOGRAFÍA BÁSICA'
-    ],
+    description: t('subscriptions.plans.lunar.description'),
+    features: t('subscriptions.plans.lunar.features'),
     buttonClass: 'btn-outline',
     icon: '🌙'
   },
   {
     id: 'planetario',
-    name: 'NIVEL PLANETARIO',
-    code: '(PLANETARIO)',
+    name: t('subscriptions.plans.planetario.name'),
+    code: t('subscriptions.plans.planetario.code'),
     price: '$34',
     period: '/LUNA',
-    description: 'Conciencia orbital: Alineación avanzada con las estrellas errantes de nuestro sistema.',
-    features: [
-      'CHAT IA ILIMITADO',
-      'SINASTRÍA DETALLADA',
-      'HORAS PLANETARIAS',
-      'ARCHIVOS VITALES'
-    ],
+    description: t('subscriptions.plans.planetario.description'),
+    features: t('subscriptions.plans.planetario.features'),
     buttonClass: 'btn-blue',
     icon: '🪐',
     highlight: false
   },
   {
     id: 'supernova',
-    name: 'NIVEL SUPERNOVA',
-    code: '(SUPERNOVA)',
+    name: t('subscriptions.plans.supernova.name'),
+    code: t('subscriptions.plans.supernova.code'),
     price: '$88',
     period: '/LUNA',
-    description: 'Comunión directa con la fuente. Integración astral total y expansión estelar.',
-    features: [
-      'CONSULTORÍA ASTRAL DIRECTA',
-      'CHAT IA ILIMITADO',
-      'GEOMETRÍA PERSONALIZADA',
-      'EVENTOS ASTRAL VIP'
-    ],
+    description: t('subscriptions.plans.supernova.description'),
+    features: t('subscriptions.plans.supernova.features'),
     buttonClass: 'btn-gold',
     icon: '⭐',
     highlight: true,
-    tag: 'MÁS RADIANTE'
+    tag: t('subscriptions.plans.supernova.tag')
   }
-]
+])
 
 function goBack() {
   router.back()
@@ -94,8 +83,8 @@ function selectPlan(plan) {
       <div class="notif-content">
         <span class="notif-icon">🌟</span>
         <div>
-          <p class="notif-title">ALINEACIÓN EXISTOSA</p>
-          <p class="notif-desc">Has ascendido al {{ selectedPlanLocal?.name }}. Reiniciando parámetros cósmicos...</p>
+          <p class="notif-title">{{ t('subscriptions.notifTitle') }}</p>
+          <p class="notif-desc">{{ t('subscriptions.notifDesc', { plan: selectedPlanLocal?.name }) }}</p>
         </div>
       </div>
       <div class="notif-progress"></div>
@@ -118,20 +107,22 @@ function selectPlan(plan) {
         <h1 class="brand-name">ASTRA<span>NUMEROLOGY</span></h1>
       </div>
       <nav class="sub-nav">
-        <a href="#" @click.prevent="navigateTo('/horoscopo')">HORÓSCOPO</a>
-        <a href="#" @click.prevent="navigateTo('/lecturas')">MAPAS</a>
-        <a href="#" class="active" @click.prevent="navigateTo('/suscripcion')">DIMENSIONES</a>
-        <a href="#" @click.prevent="navigateTo('/revelacion')">EL VACÍO</a>
+        <a href="#" @click.prevent="navigateTo('/horoscopo')">{{ t('horoscope.title') }}</a>
+        <a href="#" @click.prevent="navigateTo('/lecturas')">{{ t('history.nav.arcana') }}</a>
+        <a href="#" class="active" @click.prevent="navigateTo('/suscripcion')">{{ t('subscriptions.title') }}</a>
+        <a href="#" @click.prevent="navigateTo('/revelacion')">{{ t('nav.history') }}</a>
       </nav>
-      <button class="btn-action" @click="goBack">VINCULAR ALMA</button>
+      <div class="header-actions">
+        <button class="btn-action-alt" @click="navigateTo('/home')">{{ t('nav.back') }}</button>
+        <button class="btn-action" @click="navigateTo('/historial-pagos')">{{ t('subscriptions.historyBtn') }}</button>
+      </div>
     </header>
 
     <main class="sub-content">
-      <p class="section-tag">SUSCRIPCIÓN CELESTIAL</p>
-      <h2 class="section-title">DIMENSIONES <span>CÓSMICAS</span></h2>
+      <p class="section-tag">{{ t('subscriptions.heroTag') }}</p>
+      <h2 class="section-title">{{ t('subscriptions.title') }}</h2>
       <p class="section-desc">
-        Alinea tu frecuencia con los cuerpos celestes. Cada dimensión desbloquea<br>
-        capas profundas de la geometría astral que rige tu destino.
+        {{ t('subscriptions.desc') }}
       </p>
 
       <div class="plans-grid">
@@ -166,7 +157,7 @@ function selectPlan(plan) {
           </ul>
 
           <button :class="['btn-plan', plan.buttonClass]" @click="selectPlan(plan)">
-            ASCENDER AHORA
+            {{ t('subscriptions.ascendBtn') }}
           </button>
         </div>
       </div>
@@ -176,31 +167,31 @@ function selectPlan(plan) {
       <div class="footer-grid">
         <div class="footer-item">
           <span class="footer-icon">🏰</span>
-          <h4>SABIDURÍA ANCESTRAL</h4>
-          <p>ALGORITMOS BASADOS EN 4.000 AÑOS DE CIENCIA CALDEA.</p>
+          <h4>{{ t('subscriptions.footer.wisdom') }}</h4>
+          <p>{{ t('subscriptions.footer.wisdomDesc') }}</p>
         </div>
         <div class="footer-item">
           <span class="footer-icon">🛡️</span>
-          <h4>PROTECCIÓN DEL ALMA</h4>
-          <p>BÓVEDAS DE DATOS ESPIRITUALES ENCRIPTADOS.</p>
+          <h4>{{ t('subscriptions.footer.protection') }}</h4>
+          <p>{{ t('subscriptions.footer.protectionDesc') }}</p>
         </div>
         <div class="footer-item">
           <span class="footer-icon">📡</span>
-          <h4>EFEMÉRIDES DIARIAS</h4>
-          <p>FLUJOS DE DATOS PRECISOS DE OBSERVATORIOS GLOBALES.</p>
+          <h4>{{ t('subscriptions.footer.ephemeris') }}</h4>
+          <p>{{ t('subscriptions.footer.ephemerisDesc') }}</p>
         </div>
         <div class="footer-item">
           <span class="footer-icon">📑</span>
-          <h4>SINCRONÍA ETÉREA</h4>
-          <p>ALERTAS EN TIEMPO REAL DE CAMBIOS ASTRALES.</p>
+          <h4>{{ t('subscriptions.footer.sync') }}</h4>
+          <p>{{ t('subscriptions.footer.syncDesc') }}</p>
         </div>
       </div>
       <div class="footer-bottom">
         <p>© 2024 ASTRA SYSTEMS // COORDENADAS 34.0522° N, 118.2437° W</p>
         <div class="footer-links">
-          <a href="#" @click.prevent="showAlert('Protocolos de cifrado cuántico activos.', 'info')">PROTOCOLOS DEL VACÍO</a>
-          <a href="#" @click.prevent="showAlert('Términos regidos por la ley galáctica de 2024.', 'info')">TÉRMINOS ASTRALES</a>
-          <a href="#" @click.prevent="showAlert('Cookies residuales del Big Bang aceptadas.', 'info')">COOKIES NEURALES</a>
+          <a href="#" @click.prevent="showAlert(t('subscriptions.footer.voidAlert'), 'info')">{{ t('subscriptions.footer.voidProt') }}</a>
+          <a href="#" @click.prevent="showAlert(t('subscriptions.footer.termsAlert'), 'info')">{{ t('subscriptions.footer.astralTerms') }}</a>
+          <a href="#" @click.prevent="showAlert(t('subscriptions.footer.cookiesAlert'), 'info')">{{ t('subscriptions.footer.cookies') }}</a>
         </div>
       </div>
     </footer>
@@ -362,6 +353,30 @@ function selectPlan(plan) {
   bottom: 0; left: 0;
   width: 100%; height: 1px;
   background: #fff;
+}
+
+.header-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.btn-action-alt {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255,255,255,0.1);
+  padding: 0.75rem 2rem;
+  color: rgba(255,255,255,0.7);
+  font-size: 0.7rem;
+  letter-spacing: 2px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-action-alt:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-color: rgba(255,255,255,0.5);
 }
 
 .btn-action {

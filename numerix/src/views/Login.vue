@@ -1,7 +1,10 @@
 <script setup>
-import { ref, reactive } from "vue";
+import { ref, reactive, computed } from "vue";
 import { useRouter } from "vue-router";
 import { authService } from "../services/api.js";
+import { useI18n } from "@/composables/useI18n";
+
+const { t } = useI18n();
 
 const router = useRouter();
 const step = ref(1); // 1: Seleccionar Rol, 2: Auth
@@ -21,22 +24,22 @@ function showAlert(message, type = 'info') {
   }, 4000)
 }
 
-const roles = [
+const roles = computed(() => [
   {
     id: 1,
-    name: "VIAJERO ASTRAL",
-    label: "VIAJERO",
-    description: "Sigue la huella de los números en tu vida.",
+    name: t('auth.roles.traveler.name'),
+    label: t('auth.roles.traveler.label'),
+    description: t('auth.roles.traveler.desc'),
     icon: "✦",
   },
   {
     id: 2,
-    name: "GUÍA CÓSMICO",
-    label: "GUÍA",
-    description: "Interpreta y comparte la sabiduría estelar.",
+    name: t('auth.roles.guide.name'),
+    label: t('auth.roles.guide.label'),
+    description: t('auth.roles.guide.desc'),
     icon: "🔭",
   },
-];
+])
 
 const loginForm = reactive({ email: "", password: "" });
 const registerForm = reactive({
@@ -69,7 +72,7 @@ function switchMode(newMode) {
 async function handleLogin() {
   error.value = "";
   if (!loginForm.email || !loginForm.password) {
-    error.value = "Por favor completa todos los campos.";
+    error.value = t('auth.alerts.fillFields');
     return;
   }
   loading.value = true;
@@ -91,14 +94,14 @@ async function handleRegister() {
 
   const { nombre, email, password, fecha_nacimiento } = registerForm;
   if (!nombre || !email || !password || !fecha_nacimiento) {
-    error.value = "Por favor completa todos los campos.";
+    error.value = t('auth.alerts.fillFields');
     return;
   }
 
   loading.value = true;
   try {
     await authService.register(nombre, email, password, fecha_nacimiento);
-    success.value = "¡Sintonización completada! Ahora puedes iniciar sesión.";
+    success.value = t('auth.alerts.success');
     switchMode("login");
     loginForm.email = email;
   } catch (e) {
@@ -127,8 +130,8 @@ async function handleRegister() {
     <!-- STEP 1: ROLE SELECTION -->
     <div v-if="step === 1" class="role-selection">
       <div class="selection-header">
-        <h1 class="stellar-title">IDENTIDAD CÓSMICA</h1>
-        <p class="stellar-subtitle">Elige tu rol para iniciar tu viaje</p>
+        <h1 class="stellar-title">{{ t('auth.identity') }}</h1>
+        <p class="stellar-subtitle">{{ t('auth.subtitle') }}</p>
       </div>
 
       <div class="role-grid">
@@ -143,7 +146,7 @@ async function handleRegister() {
             <span class="role-icon">{{ role.icon }}</span>
             <h2 class="role-name">{{ role.name }}</h2>
             <p class="role-desc">{{ role.description }}</p>
-            <div class="role-select-btn">Elegir Esencia</div>
+            <div class="role-select-btn">{{ t('auth.chooseEssence') }}</div>
           </div>
         </div>
       </div>
@@ -151,13 +154,13 @@ async function handleRegister() {
 
     <!-- STEP 2: LOGIN / REGISTER -->
     <div v-else class="auth-card">
-      <button class="back-btn" @click="goBack"><span>←</span> Volver</button>
+      <button class="back-btn" @click="goBack"><span>←</span> {{ t('auth.back') }}</button>
 
       <div class="auth-header">
         <div class="logo-icon">✦</div>
-        <h1 class="brand">ACCESO ESTELAR</h1>
+        <h1 class="brand">{{ t('auth.access') }}</h1>
         <p class="subtitle" v-if="selectedRole">
-          Sincronizando como
+          {{ t('auth.syncingAs') }}
           {{ roles.find((r) => r.id === selectedRole)?.name }}
         </p>
       </div>
@@ -168,13 +171,13 @@ async function handleRegister() {
           :class="['tab', { active: mode === 'login' }]"
           @click="switchMode('login')"
         >
-          Sincronizar
+          {{ t('auth.tabs.sync') }}
         </button>
         <button
           :class="['tab', { active: mode === 'register' }]"
           @click="switchMode('register')"
         >
-          Trascender (Registro)
+          {{ t('auth.tabs.transcend') }}
         </button>
       </div>
 
@@ -185,24 +188,24 @@ async function handleRegister() {
       <!-- LOGIN FORM -->
       <form v-if="mode === 'login'" @submit.prevent="handleLogin" class="form">
         <div class="field">
-          <label>IDENTIDAD CELESTIAL // ESENCIA</label>
+          <label>{{ t('auth.fields.identityLabel') }}</label>
           <div class="input-wrapper">
             <input
               v-model="loginForm.email"
               type="email"
-              placeholder="cosmos@astral.mail"
+              :placeholder="t('auth.fields.identityPlaceholder')"
               autocomplete="email"
             />
             <span class="input-icon">🌍</span>
           </div>
         </div>
         <div class="field">
-          <label>LLAVE VIBRACIONAL // SIGILO</label>
+          <label>{{ t('auth.fields.sigilLabel') }}</label>
           <div class="input-wrapper">
             <input
               v-model="loginForm.password"
               :type="passwordVisible ? 'text' : 'password'"
-              placeholder="••••••••"
+              :placeholder="t('auth.fields.sigilPlaceholder')"
               autocomplete="current-password"
             />
             <span
@@ -249,26 +252,26 @@ async function handleRegister() {
           <label class="checkbox-container">
             <input type="checkbox" />
             <span class="checkmark"></span>
-            ANCLAR PRESENCIA
+            {{ t('auth.options.anchor') }}
           </label>
-          <a href="#" class="forgot-link">¿OLVIDASTE TU SIGILO?</a>
+          <a href="#" class="forgot-link">{{ t('auth.options.forgot') }}</a>
         </div>
 
         <button type="submit" class="btn-primary" :disabled="loading">
           <div v-if="loading" class="lds-hourglass"></div>
-          <span v-else>INICIAR SESIÓN 🧭</span>
+          <span v-else>{{ t('auth.buttons.login') }}</span>
         </button>
 
         <div class="divider">
-          <span>OTROS ACCESOS DIMENSIONALES</span>
+          <span>{{ t('auth.options.others') }}</span>
         </div>
 
         <div class="social-login">
           <button type="button" class="btn-social">
-            <span class="social-icon">G</span> SINCRONÍA ORACLE
+            <span class="social-icon">G</span> {{ t('auth.options.oracle') }}
           </button>
           <button type="button" class="btn-social">
-            <span class="social-icon">☁</span> ENLACE ÉTER
+            <span class="social-icon">☁</span> {{ t('auth.options.ether') }}
           </button>
         </div>
       </form>
@@ -276,30 +279,30 @@ async function handleRegister() {
       <!-- REGISTER FORM -->
       <form v-else @submit.prevent="handleRegister" class="form">
         <div class="field">
-          <label>NOMBRE CELESTIAL</label>
+          <label>{{ t('auth.fields.nameLabel') }}</label>
           <input
             v-model="registerForm.nombre"
             type="text"
-            placeholder="Tu nombre en el cosmos"
+            :placeholder="t('auth.fields.namePlaceholder')"
             autocomplete="name"
           />
         </div>
         <div class="field">
-          <label>CORREO DE ENLACE</label>
+          <label>{{ t('auth.fields.emailLabel') }}</label>
           <input
             v-model="registerForm.email"
             type="email"
-            placeholder="cosmos@astral.mail"
+            :placeholder="t('auth.fields.identityPlaceholder')"
             autocomplete="email"
           />
         </div>
         <div class="field">
-          <label>NUEVO SIGILO</label>
+          <label>{{ t('auth.fields.passLabel') }}</label>
           <div class="input-wrapper">
             <input
               v-model="registerForm.password"
               :type="passwordVisible ? 'text' : 'password'"
-              placeholder="Contraseña segura"
+              :placeholder="t('auth.fields.passPlaceholder')"
               autocomplete="new-password"
             />
             <span
@@ -342,13 +345,13 @@ async function handleRegister() {
           </div>
         </div>
         <div class="field">
-          <label>FECHA DE ALINEACIÓN (NACIMIENTO)</label>
+          <label>{{ t('auth.fields.dateLabel') }}</label>
           <input v-model="registerForm.fecha_nacimiento" type="date" />
         </div>
 
         <!-- Role Select within Register (if not selected) -->
         <div class="field" v-if="!selectedRole">
-          <label>ELEGIR ESENCIA</label>
+          <label>{{ t('auth.chooseEssence') }}</label>
           <select v-model="registerForm.id_rol" class="stellar-select">
             <option v-for="role in roles" :key="role.id" :value="role.id">
               {{ role.name }}
@@ -358,17 +361,17 @@ async function handleRegister() {
 
         <button type="submit" class="btn-primary" :disabled="loading">
           <div v-if="loading" class="lds-hourglass"></div>
-          <span v-else>CREAR CUENTA ESTELAR ✦</span>
+          <span v-else>{{ t('auth.buttons.register') }}</span>
         </button>
       </form>
 
       <div class="auth-footer">
         <div class="footer-links">
-          <span @click="showAlert('La ética Zen rige nuestro algoritmo.', 'info')">ÉTICA ZEN</span>
-          <span @click="showAlert('Armonía visual sintonizada.', 'info')">ARMONÍA CSS</span>
-          <span @click="showAlert('Mapeando el vacío cuántico...', 'info')">VACÍO MAP</span>
+          <span @click="showAlert(t('auth.alerts.ethicsMsg'), 'info')">{{ t('auth.footer.ethics') }}</span>
+          <span @click="showAlert(t('auth.alerts.harmonyMsg'), 'info')">{{ t('auth.footer.harmony') }}</span>
+          <span @click="showAlert(t('auth.alerts.voidMsg'), 'info')">{{ t('auth.footer.void') }}</span>
         </div>
-        <div class="footer-tag">NUMEROLOGÍA CÓSMICA</div>
+        <div class="footer-tag">{{ t('auth.footer.tagline') }}</div>
       </div>
     </div>
   </div>

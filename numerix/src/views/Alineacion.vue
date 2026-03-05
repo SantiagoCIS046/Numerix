@@ -1030,7 +1030,7 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 .status-progress { color: #c9a96e; }
 .status-incomplete { color: rgba(255, 255, 255, 0.4); }
 
-/* Cosmic Alert Top */
+/* Cosmic Alert Top Responsive Fix */
 .cosmic-alert-top {
   position: fixed;
   top: 1.5rem;
@@ -1041,22 +1041,23 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: #fff;
   backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
   box-shadow: 0 10px 40px rgba(0,0,0,0.5), 0 0 20px rgba(255, 255, 255, 0.1);
   font-family: 'Outfit', sans-serif;
   letter-spacing: 1px;
-  min-width: 400px;
+  width: 90%;
+  max-width: 450px;
+  min-width: auto;
   border-radius: 12px;
   display: flex;
   align-items: center;
   gap: 1rem;
   padding: 1rem 1.5rem;
-}
-
-.alert-icon {
-  font-size: 1.2rem;
+  transition: all 0.3s ease;
 }
 
 @media (max-width: 900px) {
+  .alignment-page { padding: 1.5rem; }
   .grid-3 { grid-template-columns: 1fr 1fr; }
   .grid-3 .full-width { grid-column: span 2; }
   .aura-grid { grid-template-columns: 1fr 1fr; }
@@ -1064,22 +1065,23 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   .alignment-header { flex-direction: column; gap: 1.5rem; text-align: center; }
   .header-left { flex-direction: column; }
   .header-right { flex-wrap: wrap; justify-content: center; gap: 1rem; }
-  .main-title { font-size: 2rem; }
-  .alignment-card { padding: 2rem; }
-  .progress-container { display: none; }
+  .main-title { font-size: 2.2rem; }
+  .alignment-card { padding: 2.5rem; border-radius: 28px; }
+  .progress-container { margin-bottom: 3rem; }
 }
 
 @media (max-width: 600px) {
+  .cosmic-alert-top { top: 1rem; padding: 0.75rem 1rem; font-size: 0.9rem; }
   .grid-3 { grid-template-columns: 1fr; }
   .grid-3 .full-width { grid-column: span 1; }
-  .aura-grid { grid-template-columns: 1fr 1fr; }
-  .main-title { font-size: 1.5rem; }
+  .aura-grid { grid-template-columns: 1fr; }
+  .main-title { font-size: 1.8rem; }
   .alignment-card { padding: 1.5rem; border-radius: 20px; }
   .cosmic-form { gap: 2.5rem; }
-  .alignment-page { padding: 1rem; }
+  .alignment-page { padding: 4rem 1rem 1rem; }
   .site-nav-footer { flex-direction: column; gap: 1.5rem; }
   .nav-links { flex-wrap: wrap; gap: 1rem; justify-content: center; }
-  .btn-primary-stellar { padding: 1rem 2rem; font-size: 0.85rem; }
+  .btn-primary-stellar { padding: 1.2rem 2.5rem; font-size: 0.9rem; width: 100%; }
 }
 </style>
 

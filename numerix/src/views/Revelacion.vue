@@ -319,26 +319,12 @@ function showAlert(message, type = 'info') {
   flex-direction: column;
 }
 
-/* Cosmic Alert Top */
+/* Cosmic Alert Top Responsive Fix */
 .cosmic-alert-top {
-  position: fixed;
-  top: 1.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10000;
-  background: rgba(15, 12, 41, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #fff;
-  backdrop-filter: blur(15px);
-  box-shadow: 0 10px 40px rgba(0,0,0,0.5), 0 0 20px rgba(255, 255, 255, 0.1);
-  font-family: 'Outfit', sans-serif;
-  letter-spacing: 1px;
-  min-width: 400px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem 1.5rem;
+  width: 90%;
+  max-width: 450px;
+  min-width: auto;
+  transition: all 0.3s ease;
 }
 
 .alert-icon {
@@ -906,6 +892,34 @@ function showAlert(message, type = 'info') {
 
 @media (max-width: 1200px) {
   .content-grid { grid-template-columns: 1fr; }
-  .results-sidebar { border-left: none; border-top: 1px solid rgba(255, 255, 255, 0.1); }
+  .results-sidebar { border-left: none; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 3rem; }
+}
+
+@media (max-width: 992px) {
+  .revelation-container { padding: 1rem; }
+  .rev-header { flex-direction: column; gap: 1.5rem; text-align: center; }
+  .header-actions { justify-content: center; }
+  .interactive-chart { width: 350px; height: 350px; }
+  .ring-4 { width: 320px; height: 320px; }
+  .ring-3 { width: 240px; height: 240px; }
+  .ring-2 { width: 140px; height: 140px; }
+}
+
+@media (max-width: 768px) {
+  .main-title { font-size: 1.4rem; }
+  .interactive-chart { width: 280px; height: 280px; }
+  .ring-4 { width: 260px; height: 260px; }
+  .ring-3 { width: 180px; height: 180px; }
+  .center-orb { width: 60px; height: 60px; font-size: 1.4rem; }
+  .stats-grid { grid-template-columns: 1fr; }
+  .nodes-grid { flex-direction: column; }
+  .vibration-info { flex-direction: column; text-align: center; align-items: center; }
+  .chart-footer { width: 100%; flex-direction: column-reverse; align-items: center; gap: 2rem; }
+  .zoom-controls { flex-direction: row; }
+}
+
+@media (max-width: 480px) {
+  .cosmic-alert-top { top: 1rem; padding: 0.75rem 1rem; font-size: 0.9rem; }
+  .message-tag { font-size: 0.6rem; padding: 0.4rem 0.8rem; }
 }
 </style>

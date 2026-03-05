@@ -25,15 +25,26 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: #fff;
   backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
   box-shadow: 0 10px 40px rgba(0,0,0,0.5), 0 0 20px rgba(255, 255, 255, 0.1);
   font-family: 'Outfit', sans-serif;
   letter-spacing: 1px;
-  min-width: 400px;
+  width: 90%;
+  max-width: 450px;
   border-radius: 12px;
   display: flex !important;
   align-items: center;
   gap: 1rem;
   padding: 1rem 1.5rem;
+  transition: all 0.3s ease;
+}
+
+@media (max-width: 576px) {
+  .cosmic-alert-top {
+    top: 1rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+  }
 }
 
 .alert-icon {

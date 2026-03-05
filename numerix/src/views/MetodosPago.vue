@@ -798,6 +798,37 @@ function goHome() {
   .astral-card { width: 100%; max-width: 500px; }
 }
 
+@media (max-width: 768px) {
+  .terminal-header {
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    height: auto;
+  }
+  .nav-actions-left, .status { width: 100%; justify-content: center; }
+  .logo { margin: 1rem 0; }
+  .terminal-grid { padding: 1rem; }
+  .payment-form { padding: 1.5rem; }
+  .astral-card { 
+    width: 100%; 
+    height: 240px; 
+    padding: 1.5rem;
+    max-width: 400px;
+  }
+  .card-number { font-size: 1.2rem; margin-top: 1rem; }
+  .form-row { grid-template-columns: 1fr; gap: 0; }
+  .security-info { gap: 1.5rem; }
+}
+
+@media (max-width: 480px) {
+  .astral-card { height: 200px; border-radius: 12px; }
+  .card-number { font-size: 1rem; letter-spacing: 2px; }
+  .tabs { margin-bottom: 2rem; }
+  .tab { padding: 0.75rem; font-size: 0.65rem; }
+  .input-wrapper input { padding: 1rem; }
+  .sync-btn { padding: 1.2rem; }
+}
+
 .loader { display: flex; align-items: center; justify-content: center; gap: 1rem; }
 .loader::after { content: ''; width: 16px; height: 16px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }

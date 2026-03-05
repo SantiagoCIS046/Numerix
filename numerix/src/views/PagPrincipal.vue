@@ -32,6 +32,11 @@ const menuItems = ref([
   { icon: '⚙️', label: t('nav.settings').toUpperCase(), route: '/configuracion' },
 ])
 
+const isMobileMenuOpen = ref(false)
+const toggleMobileMenu = () => { isMobileMenuOpen.value = !isMobileMenuOpen.value }
+const closeMobileMenu = () => { isMobileMenuOpen.value = false }
+watch(() => route.path, () => { isMobileMenuOpen.value = false })
+
 const activeIndex = computed(() => {
   return menuItems.value.findIndex(item => item.route === route.path)
 })
@@ -261,6 +266,26 @@ const activeAstral = ref(null)
 
 <template>
   <div class="dashboard-layout">
+    <!-- Mobile Top Bar -->
+    <header class="mobile-top-bar">
+      <div class="mobile-logo" @click="router.push('/home')">
+        <span class="logo-spark">✨</span>
+        <span class="mobile-logo-text">ASTRA</span>
+      </div>
+      <button class="menu-toggle" @click="toggleMobileMenu" aria-label="Toggle Menu">
+        <div :class="['hamburger', { active: isMobileMenuOpen }]">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </button>
+    </header>
+
+    <!-- Mobile Overlay -->
+    <Transition name="fade">
+      <div v-if="isMobileMenuOpen" class="mobile-overlay" @click="closeMobileMenu"></div>
+    </Transition>
+
     <!-- Sistema solar 3D en canvas -->
     <SistemaSolar />
 
@@ -276,7 +301,7 @@ const activeAstral = ref(null)
     </div>
 
     <!-- SIDEBAR -->
-    <aside class="sidebar">
+    <aside :class="['sidebar', { open: isMobileMenuOpen }]">
       <AnimatedList
         :items="fullSidebarItems"
         :showGradients="true"
@@ -544,6 +569,93 @@ const activeAstral = ref(null)
   font-family: 'Outfit', sans-serif;
   overflow: hidden;
   position: relative;
+}
+
+/* MOBILE TOP BAR */
+.mobile-top-bar {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: rgba(15, 12, 41, 0.85);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0 1.5rem;
+  z-index: 1000;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mobile-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.mobile-logo-text {
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: 3px;
+  color: #fff;
+}
+
+.menu-toggle {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hamburger {
+  width: 24px;
+  height: 18px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.hamburger span {
+  display: block;
+  width: 100%;
+  height: 2px;
+  background-color: #c9a96e;
+  border-radius: 2px;
+  transition: all 0.3s ease-in-out;
+}
+
+.hamburger.active span:nth-child(1) {
+  transform: translateY(8px) rotate(45deg);
+}
+
+.hamburger.active span:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger.active span:nth-child(3) {
+  transform: translateY(-8px) rotate(-45deg);
+}
+
+.mobile-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 900;
+}
+
+/* FADE TRANSITION */
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
 }
 
 /* SIDEBAR */
@@ -1493,15 +1605,55 @@ const activeAstral = ref(null)
 /* RESPONSIVENESS */
 @media (max-width: 1200px) {
   .astro-data { display: none; }
-  .modules-grid { grid-template-columns: 1fr; }
+  .modules-grid { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
   .featured-card { flex-direction: column; padding: 2.5rem; }
   .card-visual { position: relative; width: 100%; height: 200px; margin-top: 2rem; }
 }
 
+@media (max-width: 992px) {
+  .sidebar {
+    width: 260px;
+    transform: translateX(-100%);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    background: rgba(15, 12, 41, 0.95);
+    border-right: 1px solid rgba(201, 169, 110, 0.2);
+  }
+  
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .main-content {
+    padding-left: 0 !important;
+    margin-top: 60px;
+  }
+
+  .mobile-top-bar {
+    display: flex;
+  }
+
+  .dashboard-body {
+    padding: 1.5rem;
+  }
+  
+  .top-header {
+    padding: 1rem 1.5rem;
+  }
+}
+
 @media (max-width: 768px) {
-  .sidebar { position: fixed; transform: translateX(-100%); transition: 0.3s; }
-  .main-content { padding-left: 0; }
-  .top-header, .dashboard-body { padding: 1.5rem; }
+  .welcome-title { font-size: 1.8rem; }
+  .featured-card { padding: 2rem; }
+  .geo-card { flex-direction: column; }
+  .geo-right { min-width: 100%; margin-top: 2rem; }
+  .modal-panel { padding: 2rem; border-radius: 20px; }
+}
+
+@media (max-width: 480px) {
+  .welcome-title { font-size: 1.5rem; }
+  .card-title { font-size: 1.4rem; }
+  .modules-grid { grid-template-columns: 1fr; }
+  .profile-grid { grid-template-columns: 1fr; }
 }
 
 /* ── MODULE MODAL ── */

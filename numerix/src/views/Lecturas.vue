@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import { lecturasService } from '../services/api.js'
+import { authStore } from '@/store/auth.js'
 import Galaxy from '../components/Galaxy.vue'
 
 const { t } = useI18n()
@@ -73,33 +74,51 @@ const advisoryChecklist = computed(() => [
   },
 ])
 
-onMounted(async () => {
+async function fetchReadings() {
+  const store = authStore()
+  const userId = store.currentUser?.id
+
+  if (!userId) {
+    loading.value = false
+    error.value = 'Debes iniciar sesión para ver tus lecturas personalizadas.'
+    return
+  }
+
+  loading.value = true
   try {
-    const data = await lecturasService.getAll()
+    const data = await lecturasService.getAllByUser(userId)
     if (data && data.length > 0) {
       readings.value = data
-      // Use the first reading or the most recent one
       const apiReading = data[0]
       currentReading.value = {
-        numero: apiReading.numero || defaultReading.numero,
-        titulo: apiReading.titulo || defaultReading.titulo,
-        descripcion: apiReading.descripcion || defaultReading.descripcion,
-        consejo_texto: apiReading.consejo || apiReading.consejo_texto || defaultReading.consejo_texto,
-        frecuencia: apiReading.frecuencia || defaultReading.frecuencia,
-        frase_guia: apiReading.frase || apiReading.frase_guia || defaultReading.frase_guia,
-        fase_lunar: apiReading.fase_lunar || defaultReading.fase_lunar,
-        planeta_activo: apiReading.planeta_activo || defaultReading.planeta_activo,
-        nivel_suerte: apiReading.nivel_suerte || defaultReading.nivel_suerte,
-        influencia_solar: apiReading.influencia_solar || defaultReading.influencia_solar
+        numero: apiReading.numero || defaultReading.value.numero,
+        titulo: apiReading.titulo || defaultReading.value.titulo,
+        descripcion: apiReading.descripcion || defaultReading.value.descripcion,
+        consejo_texto: apiReading.consejo || apiReading.consejo_texto || defaultReading.value.consejo_texto,
+        frecuencia: apiReading.frecuencia || defaultReading.value.frecuencia,
+        frase_guia: apiReading.frase || apiReading.frase_guia || defaultReading.value.frase_guia,
+        fase_lunar: apiReading.fase_lunar || defaultReading.value.fase_lunar,
+        planeta_activo: apiReading.planeta_activo || defaultReading.value.planeta_activo,
+        nivel_suerte: apiReading.nivel_suerte || defaultReading.value.nivel_suerte,
+        influencia_solar: apiReading.influencia_solar || defaultReading.value.influencia_solar
       }
     }
   } catch (err) {
     console.error('Error fetching readings:', err)
-    error.value = 'No se pudo cargar la información del servidor. Usando datos locales.'
+    error.value = 'No se pudo cargar la información del servidor.'
   } finally {
     loading.value = false
   }
+}
+
+onMounted(async () => {
+  await fetchReadings()
 })
+
+function handleSync() {
+  showAlert('preciona el btn para sincronizar', 'info')
+  fetchReadings()
+}
 
 function goBack() {
   router.push('/home')
@@ -186,6 +205,11 @@ function showAlert(message, type = 'info') {
             <div class="number-rings"></div>
           </div>
           <h2 class="hero-title">{{ currentReading.titulo }}</h2>
+          <div class="sync-actions">
+            <button class="sync-cosmic-btn" @click="handleSync">
+              <span class="sync-icon">🔄</span> SINCRONIZAR CON EL COSMOS
+            </button>
+          </div>
           <p class="hero-description">{{ currentReading.descripcion }}</p>
         </section>
 
@@ -560,6 +584,44 @@ function showAlert(message, type = 'info') {
   max-width: 600px;
   margin: 0 auto;
   line-height: 1.6;
+}
+
+.sync-actions { 
+  margin: 2rem 0; 
+}
+
+.sync-cosmic-btn {
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  color: #a5b4fc;
+  padding: 0.8rem 2.5rem;
+  border-radius: 50px;
+  font-weight: 800;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 1rem;
+  letter-spacing: 3px;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  text-transform: uppercase;
+}
+
+.sync-cosmic-btn:hover {
+  background: rgba(99, 102, 241, 0.2);
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3);
+  color: #fff;
+}
+
+.sync-icon { 
+  font-size: 1.2rem;
+  animation: rotate 4s linear infinite;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* ADVICE GRID */

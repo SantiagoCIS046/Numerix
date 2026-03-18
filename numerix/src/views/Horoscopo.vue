@@ -8,6 +8,24 @@ const { t } = useI18n()
 
 const router = useRouter()
 const activeCategory = ref('love')
+const showSignSelector = ref(false)
+
+const zodiacSigns = [
+  { id: 'aries', name: 'Aries', icon: '♈' },
+  { id: 'tauro', name: 'Tauro', icon: '♉' },
+  { id: 'geminis', name: 'Géminis', icon: '♊' },
+  { id: 'cancer', name: 'Cáncer', icon: '♋' },
+  { id: 'leo', name: 'Leo', icon: '♌' },
+  { id: 'virgo', name: 'Virgo', icon: '♍' },
+  { id: 'libra', name: 'Libra', icon: '♎' },
+  { id: 'escorpio', name: 'Escorpio', icon: '♏' },
+  { id: 'sagitario', name: 'Sagitario', icon: '♐' },
+  { id: 'capricornio', name: 'Capricornio', icon: '♑' },
+  { id: 'acuario', name: 'Acuario', icon: '♒' },
+  { id: 'piscis', name: 'Piscis', icon: '♓' }
+]
+
+const selectedSign = ref('Tauro')
 
 const user = computed(() => {
   const stored = localStorage.getItem('user')
@@ -17,10 +35,33 @@ const user = computed(() => {
   
   return {
     nombre: alignmentData?.fullName || userData?.nombre || userData?.name || 'VIAJERO ASTRAL',
-    signo: alignmentData?.signo || userData?.signo || 'Tauro',
+    signo: selectedSign.value,
     role: userData?.role || 'BUSCADOR CÓSMICO'
   }
 })
+
+import { onMounted } from 'vue'
+onMounted(() => {
+  const stored = localStorage.getItem('user')
+  const alignment = localStorage.getItem('alignmentProfile')
+  const userData = stored ? JSON.parse(stored) : null
+  const alignmentData = alignment ? JSON.parse(alignment) : null
+  const initialSign = alignmentData?.signo || userData?.signo || 'Tauro'
+  selectedSign.value = initialSign
+})
+
+function selectSign(signName) {
+  selectedSign.value = signName
+  showSignSelector.value = false
+  
+  // Opcional: Persistir el cambio
+  const alignment = localStorage.getItem('alignmentProfile')
+  if (alignment) {
+    const data = JSON.parse(alignment)
+    data.signo = signName
+    localStorage.setItem('alignmentProfile', JSON.stringify(data))
+  }
+}
 
 const categories = computed(() => [
   { id: 'love', label: t('horoscope.categories.love'), icon: '❤️' },
@@ -99,8 +140,37 @@ function showAlert(message, type = 'info') {
         <div class="hero-glow"></div>
         <p class="hero-tag">{{ t('horoscope.heroTag') }}</p>
         <h1 class="hero-title">{{ t('horoscope.title') }}</h1>
-        <div class="sign-tag">{{ user?.signo || 'Tauro' }}</div>
+        <div class="sign-tag-wrapper">
+          <button class="sign-tag-btn" @click="showSignSelector = true">
+            <span class="sign-text">{{ user?.signo || 'Tauro' }}</span>
+            <span class="edit-icon">✎</span>
+          </button>
+        </div>
       </section>
+
+      <!-- SIGN SELECTOR MODAL -->
+      <Transition name="fade-scale">
+        <div v-if="showSignSelector" class="sign-modal-overlay" @click.self="showSignSelector = false">
+          <div class="sign-modal-card">
+            <header class="modal-header">
+              <h3>ELIGE TU SIGNO</h3>
+              <button class="close-modal" @click="showSignSelector = false">✕</button>
+            </header>
+            <div class="signs-grid">
+              <button 
+                v-for="s in zodiacSigns" 
+                :key="s.id" 
+                class="sign-btn"
+                :class="{ active: selectedSign === s.name }"
+                @click="selectSign(s.name)"
+              >
+                <span class="sign-icon">{{ s.icon }}</span>
+                <span class="sign-name">{{ s.name }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
 
       <section class="prediction-card">
         <div class="category-tabs">
@@ -282,5 +352,102 @@ function showAlert(message, type = 'info') {
   filter: invert(1);
 }
 
-@media (max-width: 900px) { .side-sections { grid-template-columns: 1fr; } .category-tabs { flex-wrap: wrap; } .navbar { padding: 1rem 2rem; } .nav-center { display: none; } }
+/* SIGN MODAL styles */
+.sign-tag-wrapper { margin-top: 1.5rem; }
+.sign-tag-btn {
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  color: #a5b4fc;
+  padding: 0.6rem 2rem;
+  border-radius: 50px;
+  font-weight: 800;
+  font-size: 1rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  transition: all 0.3s;
+}
+.sign-tag-btn:hover {
+  background: rgba(99, 102, 241, 0.2);
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+}
+.edit-icon { font-size: 0.8rem; opacity: 0.5; }
+
+.sign-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(2, 2, 5, 0.85);
+  backdrop-filter: blur(10px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sign-modal-card {
+  background: rgba(15, 20, 35, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 32px;
+  width: 90%;
+  max-width: 600px;
+  padding: 2.5rem;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+.modal-header h3 { font-family: 'Outfit', sans-serif; font-weight: 800; letter-spacing: 3px; font-size: 1.2rem; color: #6366f1; }
+.close-modal { background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; opacity: 0.5; }
+.close-modal:hover { opacity: 1; }
+
+.signs-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.sign-btn {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  padding: 1.5rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.sign-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-5px);
+}
+
+.sign-btn.active {
+  background: #6366f1;
+  border-color: #6366f1;
+}
+.sign-btn.active .sign-name { color: #fff; }
+.sign-btn.active .sign-icon { color: #fff; }
+
+.sign-icon { font-size: 2rem; color: #6366f1; }
+.sign-name { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: rgba(255, 255, 255, 0.6); }
+
+/* Transitions */
+.fade-scale-enter-active, .fade-scale-leave-active { transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+.fade-scale-enter-from, .fade-scale-leave-to { opacity: 0; transform: scale(0.9); }
+
+@media (max-width: 900px) { .side-sections { grid-template-columns: 1fr; } .category-tabs { flex-wrap: wrap; } .navbar { padding: 1rem 2rem; } .nav-center { display: none; } .signs-grid { grid-template-columns: repeat(3, 1fr); } }
 </style>

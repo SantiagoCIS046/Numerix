@@ -2,6 +2,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
+import { lecturasService } from '@/services/api.js'
+import { authStore } from '@/store/auth.js'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -84,7 +86,7 @@ const statusClass = computed(() => ({
   'status-incomplete': formStatus.value === 'DATOS INCOMPLETOS',
 }))
 
-function handleSubmit() {
+async function handleSubmit() {
   if (!formData.value.fullName) {
     showAlert('Por favor ingresa tu nombre completo.')
     return
@@ -94,17 +96,37 @@ function handleSubmit() {
     return
   }
 
-  // Save alignment profile to localStorage
-  localStorage.setItem('alignmentProfile', JSON.stringify({
-    ...formData.value,
-    savedAt: new Date().toISOString()
-  }))
+  try {
+    // 1. Guardar localmente para disponibilidad inmediata
+    localStorage.setItem('alignmentProfile', JSON.stringify({
+      ...formData.value,
+      savedAt: new Date().toISOString()
+    }))
 
-  showAlert('¡Alineación exitosa! Sincronizando con el Nodo Principal...', 'success')
-  
-  setTimeout(() => {
-    router.push('/home')
-  }, 2000)
+    // 2. Persistir en el Backend si hay sesión activa
+    const store = authStore()
+    if (store.currentUser?.id) {
+      await lecturasService.generateMain(
+        store.currentUser.id, 
+        formData.value.fullName, 
+        formData.value.birthDate
+      )
+      showAlert('¡Alineación exitosa! Sincronizando con el Nodo Principal...', 'success')
+    } else {
+      showAlert('Alineación guardada localmente. Inicia sesión para sincronizar con el cosmos.', 'info')
+    }
+    
+    setTimeout(() => {
+      router.push('/home')
+    }, 2000)
+  } catch (err) {
+    console.error('Error al sincronizar alineación:', err)
+    showAlert('Alineación guardada localmente, pero hubo un error al sincronizar con el servidor.', 'warning')
+    
+    setTimeout(() => {
+      router.push('/home')
+    }, 3000)
+  }
 }
 
 const showCountryDropdown = ref(false)

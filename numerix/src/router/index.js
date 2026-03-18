@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
+import { hasValidToken } from "@/store/auth.js";
 import AuthView from "../views/Login.vue";
 import PagPrincipal from "../views/PagPrincipal.vue";
 import Alineacion from "../views/Alineacion.vue";
@@ -22,6 +23,7 @@ const routes = [
     path: "/auth",
     name: "Auth",
     component: AuthView,
+    meta: { public: true },
   },
   {
     path: "/home",
@@ -94,5 +96,14 @@ const router = createRouter({
   history: createWebHistory(),
   routes,
 });
+
+// ─── Navigation Guard ────────────────────────────────────────
+// Protege todas las rutas que no tengan meta.public = true
+router.beforeEach((to) => {
+  const isPublic = to.meta?.public === true
+  if (!isPublic && !hasValidToken()) {
+    return { name: 'Auth' }
+  }
+})
 
 export default router;

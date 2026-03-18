@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 import { useI18n } from '@/composables/useI18n'
+import { authStore } from '@/store/auth.js'
 
 const { t, setLanguage, currentLanguage } = useI18n()
 
@@ -110,8 +111,7 @@ const navigateTo = (route) => {
 }
 
 const logout = () => {
-  localStorage.removeItem('user')
-  localStorage.removeItem('userSubscription')
+  authStore.clearSession()
   router.push('/auth')
 }
 

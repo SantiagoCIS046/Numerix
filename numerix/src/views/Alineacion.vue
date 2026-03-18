@@ -19,18 +19,28 @@ function goBackToHome() {
 }
 
 
-// Pre-fill name from logged-in user
+// Pre-fill name and birth date from logged-in user
 const storedUser = localStorage.getItem('user')
 const loggedUser = storedUser ? JSON.parse(storedUser) : null
 
+// Also check for previously saved alignment profile
+const storedAlignment = localStorage.getItem('alignmentProfile')
+const savedAlignment = storedAlignment ? JSON.parse(storedAlignment) : null
+
+// Format fecha_nacimiento (YYYY-MM-DD) if it exists
+const rawFecha = loggedUser?.fecha_nacimiento || ''
+const preFillDate = rawFecha
+  ? rawFecha.split('T')[0] // Handle ISO strings like "2000-01-15T00:00:00.000Z"
+  : (savedAlignment?.birthDate || '')
+
 const formData = ref({
-  fullName: loggedUser?.name || loggedUser?.nombre || '',
-  birthDate: '',
-  birthTime: '',       // optional
-  path: 'solar',       // 'solar' | 'lunar'
-  auraDensity: 'fluida',
-  cosmicVision: '',
-  country: 'CO'        // Default to Colombia
+  fullName: savedAlignment?.fullName || loggedUser?.nombre || loggedUser?.name || '',
+  birthDate: preFillDate,
+  birthTime: savedAlignment?.birthTime || '',
+  path: savedAlignment?.path || 'solar',      // 'solar' | 'lunar'
+  auraDensity: savedAlignment?.auraDensity || 'fluida',
+  cosmicVision: savedAlignment?.cosmicVision || '',
+  country: savedAlignment?.country || 'CO'    // Default to Colombia
 })
 
 const countries = [
@@ -113,13 +123,13 @@ function selectCountry(code) {
 
 function resetForm() {
   formData.value = {
-    fullName: loggedUser?.name || loggedUser?.nombre || '',
-    birthDate: '',
-    birthTime: '',
-    path: 'solar',
-    auraDensity: 'fluida',
-    cosmicVision: '',
-    country: 'CO'
+    fullName: savedAlignment?.fullName || loggedUser?.nombre || loggedUser?.name || '',
+    birthDate: preFillDate,
+    birthTime: savedAlignment?.birthTime || '',
+    path: savedAlignment?.path || 'solar',
+    auraDensity: savedAlignment?.auraDensity || 'fluida',
+    cosmicVision: savedAlignment?.cosmicVision || '',
+    country: savedAlignment?.country || 'CO'
   }
   showCountryDropdown.value = false
 }

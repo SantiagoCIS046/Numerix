@@ -63,7 +63,7 @@ const user = computed(() => {
   const alignmentData = alignment ? JSON.parse(alignment) : null
   
   return {
-    nombre: alignmentData?.fullName || userData?.nombre || userData?.name || 'SANTIAGO CISNEROS',
+    nombre: alignmentData?.fullName || userData?.nombre || userData?.name || 'VIAJERO ASTRAL',
     role: userData?.role || 'BUSCADOR CÓSMICO',
     alignmentStatus: alignmentData ? t('revelation.statusComplete') : t('revelation.statusPending')
   }

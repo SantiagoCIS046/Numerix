@@ -18,7 +18,7 @@ const user = computed(() => {
   const subData = subscription ? JSON.parse(subscription) : null
   
   return {
-    nombre: alignmentData?.fullName || userData?.nombre || userData?.name || 'SANTIAGO CISNEROS',
+    nombre: alignmentData?.fullName || userData?.nombre || userData?.name || 'VIAJERO ASTRAL',
     plan: subData?.name || t('history.stats.planLunar'),
     startDate: subData?.date ? new Date(subData.date).toLocaleDateString() : '03 ENE, 2024',
     rawDate: subData?.date || new Date().toISOString(),

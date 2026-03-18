@@ -3,6 +3,8 @@ import { ref, reactive, computed } from "vue";
 import { useRouter } from "vue-router";
 import { authService } from "../services/api.js";
 import { useI18n } from "@/composables/useI18n";
+import { authStore } from "@/store/auth.js";
+import { validateEmail, firstError, required } from "@/utils/validators.js";
 
 const { t } = useI18n();
 
@@ -71,15 +73,25 @@ function switchMode(newMode) {
 
 async function handleLogin() {
   error.value = "";
-  if (!loginForm.email || !loginForm.password) {
-    error.value = t('auth.alerts.fillFields');
+
+  // Validar con utils/validators.js
+  const validationError = firstError(
+    required(loginForm.email, 'El email'),
+    validateEmail(loginForm.email),
+    required(loginForm.password, 'La contraseña'),
+  )
+  if (validationError) {
+    error.value = validationError;
     return;
   }
+
   loading.value = true;
   try {
     const data = await authService.login(loginForm.email, loginForm.password);
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("user", JSON.stringify(data.user[0]));
+
+    // Usar authStore en lugar de setItem directo
+    authStore.setSession(data.token, data.user[0]);
+
     router.push("/alineacion");
   } catch (e) {
     error.value = e.message;

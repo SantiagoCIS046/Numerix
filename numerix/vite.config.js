@@ -5,7 +5,7 @@ import { fileURLToPath, URL } from "node:url";
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
-  const apiUrl = env.VITE_API_URL || "https://mh08zj24-3005.use2.devtunnels.ms";
+  const apiUrl = env.VITE_API_URL || "https://pj01pdf1-3005.use2.devtunnels.ms";
 
   return {
     plugins: [vue()],
@@ -22,7 +22,9 @@ export default defineConfig(({ mode }) => {
           secure: false,
           headers: {
             "X-Tunnel-Skip-AntiCsrf": "true",
+            "X-Requested-With": "XMLHttpRequest",
           },
+          followRedirects: true,
         },
       },
     },

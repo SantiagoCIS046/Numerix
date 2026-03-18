@@ -28,8 +28,9 @@ const API_BASE = import.meta.env.DEV
 async function request(endpoint, method = 'GET', body = null, auth = false) {
   // Interceptor de REQUEST: agregar headers estándar
   const headers = {
-    'Content-Type':            'application/json',
-    'X-Tunnel-Skip-AntiCsrf': 'true', // Necesario para dev tunnels de VS Code
+    'Content-Type': 'application/json',
+    'X-Tunnel-Skip-AntiCsrf': 'true',
+    'X-Requested-With': 'XMLHttpRequest',
   }
 
   if (auth) {
@@ -94,10 +95,10 @@ async function request(endpoint, method = 'GET', body = null, auth = false) {
 
 // ─── Métodos de conveniencia ─────────────────────────────────
 export const httpClient = {
-  get:    (endpoint, auth = false)         => request(endpoint, 'GET',    null, auth),
-  post:   (endpoint, body, auth = false)   => request(endpoint, 'POST',   body, auth),
-  put:    (endpoint, body, auth = false)   => request(endpoint, 'PUT',    body, auth),
-  delete: (endpoint, auth = false)         => request(endpoint, 'DELETE', null, auth),
+  get: (endpoint, auth = false) => request(endpoint, 'GET', null, auth),
+  post: (endpoint, body, auth = false) => request(endpoint, 'POST', body, auth),
+  put: (endpoint, body, auth = false) => request(endpoint, 'PUT', body, auth),
+  delete: (endpoint, auth = false) => request(endpoint, 'DELETE', null, auth),
 }
 
 export default httpClient

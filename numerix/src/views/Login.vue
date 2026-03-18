@@ -1,10 +1,11 @@
 <script setup>
 import { ref, reactive, computed } from "vue";
 import { useRouter } from "vue-router";
-import { authService } from "../services/api.js";
+import { authService, passwordService } from "../services/api.js";
 import { useI18n } from "@/composables/useI18n";
 import { authStore } from "@/store/auth.js";
 import { validateEmail, firstError, required } from "@/utils/validators.js";
+import { httpClient } from "@/plugins/http.js";
 
 const { t } = useI18n();
 
@@ -15,7 +16,7 @@ const loading = ref(false);
 const error = ref("");
 const success = ref("");
 const selectedRole = ref(null);
-const passwordVisible = ref(false);
+const passwordVisible = ref(true);
 
 const bootstrapAlert = ref({ show: false, message: '', type: 'info' })
 
@@ -112,7 +113,8 @@ async function handleRegister() {
 
   loading.value = true;
   try {
-    await authService.register(nombre, email, password, fecha_nacimiento);
+    // El backend espera id_rol según la lógica de la DB
+    await authService.register(nombre, email, password, fecha_nacimiento, selectedRole.value);
     success.value = t('auth.alerts.success');
     switchMode("login");
     loginForm.email = email;
@@ -120,6 +122,91 @@ async function handleRegister() {
     error.value = e.message;
   } finally {
     loading.value = false;
+  }
+}
+// ─── Olvidé mi contraseña (flujo 2 pasos) ──────────────────────────
+const showForgotModal = ref(false)
+const forgotStep      = ref(1)        // 1 = email, 2 = código + nueva pw
+const forgotEmail     = ref('')
+const forgotCode      = ref('')
+const forgotNewPw     = ref('')
+const forgotLoading   = ref(false)
+const forgotMsg       = ref({ text: '', type: '' })
+
+function openForgotModal() {
+  forgotEmail.value = loginForm.email || ''
+  forgotCode.value  = ''
+  forgotNewPw.value = ''
+  forgotStep.value  = 1
+  forgotMsg.value   = { text: '', type: '' }
+  showForgotModal.value = true
+}
+
+// PASO 1: solicitar código al backend
+async function requestResetCode() {
+  forgotMsg.value = { text: '', type: '' }
+  const emailVal = forgotEmail.value.trim()
+  const emailCheck = validateEmail(emailVal)
+  if (!emailCheck.valid) {
+    forgotMsg.value = { text: emailCheck.message, type: 'error' }
+    return
+  }
+  forgotLoading.value = true
+  try {
+    await passwordService.requestReset(emailVal)
+    forgotMsg.value = { text: '✅ Código enviado a tu correo. Revisa tu bandeja de entrada.', type: 'success' }
+    setTimeout(() => { forgotStep.value = 2; forgotMsg.value = { text: '', type: '' } }, 2000)
+  } catch (err) {
+    forgotMsg.value = { text: err.message || 'No se pudo enviar el código. Intenta de nuevo.', type: 'error' }
+  } finally {
+    forgotLoading.value = false
+  }
+}
+
+// PASO 2: restablecer contraseña con el código recibido
+async function confirmReset() {
+  forgotMsg.value = { text: '', type: '' }
+  if (!forgotCode.value || forgotCode.value.length < 4) {
+    forgotMsg.value = { text: 'Ingresa el código recibido en tu correo.', type: 'error' }
+    return
+  }
+  if (!forgotNewPw.value || forgotNewPw.value.length < 6) {
+    forgotMsg.value = { text: 'La nueva contraseña debe tener al menos 6 caracteres.', type: 'error' }
+    return
+  }
+  forgotLoading.value = true
+  try {
+    await passwordService.resetPassword(forgotEmail.value.trim(), forgotCode.value, forgotNewPw.value)
+    forgotMsg.value = { text: '✅ Contraseña actualizada. Ya puedes iniciar sesión.', type: 'success' }
+    setTimeout(() => { showForgotModal.value = false }, 3000)
+  } catch (err) {
+    forgotMsg.value = { text: err.message || 'Código inválido o expirado.', type: 'error' }
+  } finally {
+    forgotLoading.value = false
+  }
+}
+
+// ─── Login con Google ────────────────────────────────────────
+function handleGoogleLogin() {
+  const baseUrl = import.meta.env.VITE_API_URL || ''
+  // Redirige al endpoint OAuth de Google en el backend
+  window.location.href = `${baseUrl}/api/auth/google`
+}
+
+// ─── Login con Éter (anónimo) ────────────────────────────────
+const etherLoading = ref(false)
+
+async function handleEtherLogin() {
+  etherLoading.value = true
+  error.value = ''
+  try {
+    const data = await httpClient.post('/usuarios/ether-login', {})
+    authStore.setSession(data.token, data.user[0])
+    router.push('/alineacion')
+  } catch (err) {
+    error.value = err.message || 'Login Éter no disponible. Intenta con email y contraseña.'
+  } finally {
+    etherLoading.value = false
   }
 }
 </script>
@@ -266,7 +353,9 @@ async function handleRegister() {
             <span class="checkmark"></span>
             {{ t('auth.options.anchor') }}
           </label>
-          <a href="#" class="forgot-link">{{ t('auth.options.forgot') }}</a>
+          <button type="button" class="forgot-link" @click="openForgotModal">
+            {{ t('auth.options.forgot') }}
+          </button>
         </div>
 
         <button type="submit" class="btn-primary" :disabled="loading">
@@ -279,11 +368,13 @@ async function handleRegister() {
         </div>
 
         <div class="social-login">
-          <button type="button" class="btn-social">
+          <button type="button" class="btn-social" @click="handleGoogleLogin">
             <span class="social-icon">G</span> {{ t('auth.options.oracle') }}
           </button>
-          <button type="button" class="btn-social">
-            <span class="social-icon">☁</span> {{ t('auth.options.ether') }}
+          <button type="button" class="btn-social ether-btn" @click="handleEtherLogin" :disabled="etherLoading">
+            <span class="social-icon">☁</span>
+            <span v-if="etherLoading">Conectando...</span>
+            <span v-else>{{ t('auth.options.ether') }}</span>
           </button>
         </div>
       </form>
@@ -376,6 +467,80 @@ async function handleRegister() {
           <span v-else>{{ t('auth.buttons.register') }}</span>
         </button>
       </form>
+
+      <!-- MODAL: Olvidé mi contraseña (2 pasos) -->
+      <Transition name="modal-fade">
+        <div v-if="showForgotModal" class="forgot-overlay" @click.self="showForgotModal = false">
+          <div class="forgot-modal">
+            <button class="modal-close" @click="showForgotModal = false">✕</button>
+            <div class="modal-icon">🔑</div>
+            <h3>Restablecer Contraseña</h3>
+
+            <!-- Indicador de pasos -->
+            <div class="forgot-steps">
+              <span :class="['step-dot', { active: forgotStep === 1, done: forgotStep > 1 }]">1</span>
+              <div class="step-line"></div>
+              <span :class="['step-dot', { active: forgotStep === 2 }]">2</span>
+            </div>
+
+            <div v-if="forgotMsg.text" :class="['forgot-msg', forgotMsg.type]">{{ forgotMsg.text }}</div>
+
+            <!-- PASO 1: Email -->
+            <template v-if="forgotStep === 1">
+              <p class="modal-desc">Ingresa tu correo y te enviaremos un código de verificación.</p>
+              <div class="field">
+                <label>CORREO ELECTRÓNICO</label>
+                <input
+                  v-model="forgotEmail"
+                  type="email"
+                  placeholder="tu@correo.com"
+                  class="forgot-input"
+                  @keyup.enter="requestResetCode"
+                  autocomplete="email"
+                />
+              </div>
+              <button class="btn-forgot-submit" @click="requestResetCode" :disabled="forgotLoading">
+                <span v-if="forgotLoading">⏳ Enviando...</span>
+                <span v-else>📨 ENVIAR CÓDIGO</span>
+              </button>
+            </template>
+
+            <!-- PASO 2: Código + Nueva contraseña -->
+            <template v-else>
+              <p class="modal-desc">Ingresa el código recibido en <strong>{{ forgotEmail }}</strong> y tu nueva contraseña.</p>
+              <div class="field">
+                <label>CÓDIGO DE VERIFICACIÓN</label>
+                <input
+                  v-model="forgotCode"
+                  type="text"
+                  placeholder="Código recibido por correo"
+                  class="forgot-input codigo-reset"
+                  maxlength="10"
+                  @keyup.enter="confirmReset"
+                />
+              </div>
+              <div class="field" style="margin-top:1rem">
+                <label>NUEVA CONTRASEÑA</label>
+                <input
+                  v-model="forgotNewPw"
+                  type="password"
+                  placeholder="Mín. 6 caracteres"
+                  class="forgot-input"
+                  @keyup.enter="confirmReset"
+                  autocomplete="new-password"
+                />
+              </div>
+              <div class="forgot-step2-actions">
+                <button class="btn-back-step" @click="forgotStep = 1">← Volver</button>
+                <button class="btn-forgot-submit" @click="confirmReset" :disabled="forgotLoading">
+                  <span v-if="forgotLoading">⏳ Verificando...</span>
+                  <span v-else>🔐 RESTABLECER</span>
+                </button>
+              </div>
+            </template>
+          </div>
+        </div>
+      </Transition>
 
       <div class="auth-footer">
         <div class="footer-links">
@@ -665,7 +830,8 @@ async function handleRegister() {
   top: 50%;
   transform: translateY(-50%);
   cursor: pointer;
-  opacity: 0.6;
+  opacity: 0.9;
+  color: #c9a96e;
   transition: all 0.3s;
   user-select: none;
   z-index: 2;
@@ -921,4 +1087,153 @@ async function handleRegister() {
     padding: 2rem;
   }
 }
+
+/* ─── Botón Olvid\u00e9 mi contraseña ──────────────────────────── */
+.forgot-link {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+  font-family: 'Outfit', sans-serif;
+  transition: color 0.2s;
+}
+.forgot-link:hover { color: #a855f7; }
+
+/* ─── Botón \u00c9ter ───────────────────────────────────────────── */
+.ether-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ─── Modal overlay ──────────────────────────────────────── */
+.forgot-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.forgot-modal {
+  background: linear-gradient(135deg, rgba(15,12,41,0.98), rgba(30,20,70,0.98));
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  border-radius: 24px;
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 420px;
+  position: relative;
+  box-shadow: 0 0 60px rgba(168, 85, 247, 0.15);
+  animation: modalIn 0.3s ease;
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.9) translateY(20px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1.2rem;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.4);
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.modal-close:hover { color: #fff; }
+
+.modal-icon {
+  font-size: 2.5rem;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.forgot-modal h3 {
+  text-align: center;
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #fff;
+}
+
+.modal-desc {
+  text-align: center;
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+.forgot-input {
+  width: 100%;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+  color: #fff;
+  font-size: 0.95rem;
+  font-family: 'Outfit', sans-serif;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.3s;
+  margin-top: 0.5rem;
+}
+.forgot-input:focus { border-color: #a855f7; box-shadow: 0 0 12px rgba(168,85,247,0.2); }
+.forgot-input::placeholder { color: rgba(255,255,255,0.3); }
+
+.btn-forgot-submit {
+  width: 100%;
+  margin-top: 1.5rem;
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  border: none;
+  padding: 1rem;
+  border-radius: 12px;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 8px 20px rgba(99,102,241,0.3);
+}
+.btn-forgot-submit:hover:not(:disabled) { transform: translateY(-2px); }
+.btn-forgot-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.forgot-msg {
+  font-size: 0.83rem;
+  padding: 0.7rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+.forgot-msg.success {
+  background: rgba(34,197,94,0.1);
+  border: 1px solid rgba(34,197,94,0.3);
+  color: #4ade80;
+}
+.forgot-msg.error {
+  background: rgba(255,50,50,0.1);
+  border: 1px solid rgba(255,50,50,0.3);
+  color: #ff6b6b;
+}
+
+/* Transici\u00f3n del modal */
+.modal-fade-enter-active, .modal-fade-leave-active { transition: opacity 0.25s; }
+.modal-fade-enter-from, .modal-fade-leave-to { opacity: 0; }
+
+/* Indicador de pasos del modal */
+.forgot-steps { display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin: 1rem 0 1.5rem; }
+.step-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; border: 2px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.35); transition: all 0.3s; }
+.step-dot.active { background: linear-gradient(135deg, #6366f1, #a855f7); border-color: #a855f7; color: #fff; box-shadow: 0 0 12px rgba(168,85,247,0.4); }
+.step-dot.done { background: rgba(34,197,94,0.2); border-color: #4ade80; color: #4ade80; }
+.step-line { flex: 1; max-width: 60px; height: 1px; background: rgba(255,255,255,0.1); }
+.forgot-step2-actions { display: flex; gap: 0.8rem; margin-top: 1.5rem; }
+.btn-back-step { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 0.9rem 1.2rem; border-radius: 12px; color: rgba(255,255,255,0.6); font-size: 0.85rem; cursor: pointer; transition: all 0.2s; white-space: nowrap; font-family: 'Outfit', sans-serif; }
+.btn-back-step:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.forgot-step2-actions .btn-forgot-submit { margin-top: 0; flex: 1; }
+.codigo-reset { letter-spacing: 4px; text-align: center; font-size: 1rem; font-weight: 600; }
 </style>

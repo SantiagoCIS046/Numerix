@@ -22,6 +22,8 @@ const user = computed(() => {
   }
 })
 
+import { authStore } from '@/store/auth.js'
+
 const menuItems = ref([
   { icon: '🪄', label: t('nav.home').toUpperCase(), route: '/home' },
   { icon: '✨', label: t('nav.predictions').toUpperCase(), route: '/lecturas' },
@@ -31,6 +33,7 @@ const menuItems = ref([
   { icon: '🎯', label: 'REVELACIÓN', route: '/revelacion' },
   { icon: '⚙️', label: t('nav.settings').toUpperCase(), route: '/configuracion' },
 ])
+
 
 const isMobileMenuOpen = ref(false)
 const toggleMobileMenu = () => { isMobileMenuOpen.value = !isMobileMenuOpen.value }
@@ -163,7 +166,25 @@ function logout() {
 // --- Live cosmic clock ---
 const now = ref(new Date())
 let clockInterval = null
-onMounted(() => { clockInterval = setInterval(() => { now.value = new Date() }, 1000) })
+onMounted(() => {
+  // Add Admin Dashboard if user is Guía Cósmico (Role ID 2)
+  const userObj = authStore.currentUser.value
+  const roleId = userObj?.id_rol || userObj?.role_id
+  
+  if (roleId === 2) {
+    // Check if it already exists to avoid duplication on HMR
+    const exists = menuItems.value.some(i => i.route === '/guia-dashboard')
+    if (!exists) {
+      menuItems.value.splice(1, 0, { 
+        icon: '🏛️', 
+        label: 'SANTUARIO DEL GUÍA', 
+        route: '/guia-dashboard' 
+      })
+    }
+  }
+
+  clockInterval = setInterval(() => { now.value = new Date() }, 1000)
+})
 onUnmounted(() => clearInterval(clockInterval))
 
 const clockTime = computed(() => {

@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
-import { hasValidToken } from "@/store/auth.js";
+import { hasValidToken, currentUser } from "@/store/auth.js";
 import AuthView from "../views/Login.vue";
 import PagPrincipal from "../views/PagPrincipal.vue";
 import Alineacion from "../views/Alineacion.vue";
@@ -90,6 +90,12 @@ const routes = [
     name: "Configuracion",
     component: () => import("../views/ConfiguracionAstral.vue"),
   },
+  {
+    path: "/guia-dashboard",
+    name: "GuiaDashboard",
+    component: () => import("../views/GuiaCosmicoDashboard.vue"),
+    meta: { requiresAuth: true, adminOnly: true }
+  },
 ];
 
 const router = createRouter({
@@ -97,13 +103,30 @@ const router = createRouter({
   routes,
 });
 
+
 // ─── Navigation Guard ────────────────────────────────────────
-// Protege todas las rutas que no tengan meta.public = true
 router.beforeEach((to) => {
   const isPublic = to.meta?.public === true
-  if (!isPublic && !hasValidToken()) {
+  const tokenExists = hasValidToken()
+  const user = currentUser.value
+  const roleId = user?.id_rol || user?.role_id
+
+  // 1. Acceso a rutas protegidas sin token
+  if (!isPublic && !tokenExists) {
     return { name: 'Auth' }
   }
+
+  // 2. Acceso a rutas de Admin (Guía)
+  if (to.meta?.adminOnly) {
+    // Si no hay usuario cargado o no es el rol 2 (Guía Cósmico)
+    if (!user || roleId !== 2) {
+      console.warn('Acceso no autorizado detectado a ruta administrativa.')
+      return { name: 'Home' }
+    }
+  }
+
+  // Permitir la navegación si nada de lo anterior se cumple
+  return true
 })
 
 export default router;

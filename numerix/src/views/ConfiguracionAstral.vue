@@ -1,11 +1,12 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-
-const router = useRouter()
 import { useI18n } from '@/composables/useI18n'
 import { authStore } from '@/store/auth.js'
+import { httpClient } from '@/plugins/http.js'
+import { validatePassword, validatePasswordMatch } from '@/utils/validators.js'
 
+const router = useRouter()
 const { t, setLanguage, currentLanguage } = useI18n()
 
 // User Data (Sync with localStorage)
@@ -154,6 +155,63 @@ const themeStyles = computed(() => ({
 
 const saveSettings = () => {
   alert('💾 Sincronización Guardada en el Núcleo')
+}
+
+// ─── Cambio de Contraseña ────────────────────────────────────
+const pwForm = ref({
+  current:  '',
+  newPw:    '',
+  confirm:  '',
+  codigo:   '',
+})
+const pwLoading  = ref(false)
+const pwError    = ref('')
+const pwSuccess  = ref('')
+const showCurrent = ref(false)
+const showNew     = ref(false)
+const showConfirm = ref(false)
+
+async function changePassword() {
+  pwError.value   = ''
+  pwSuccess.value = ''
+
+  // Validaciones locales
+  if (!pwForm.value.current) {
+    pwError.value = 'Ingresa tu contraseña actual.'
+    return
+  }
+  const newValid = validatePassword(pwForm.value.newPw)
+  if (!newValid.valid) {
+    pwError.value = newValid.message
+    return
+  }
+  const match = validatePasswordMatch(pwForm.value.newPw, pwForm.value.confirm)
+  if (!match.valid) {
+    pwError.value = match.message
+    return
+  }
+  if (!pwForm.value.codigo || !/^\d{6}$/.test(pwForm.value.codigo)) {
+    pwError.value = 'Ingresa el código de verificación de 6 dígitos.'
+    return
+  }
+
+  pwLoading.value = true
+  try {
+    const userData = authStore.currentUser.value
+    const userEmail = userData?.email || ''
+
+    // El backend usa el flujo: email + code + newPassword
+    // El código que el usuario ingresó en el campo "CÓDIGO DE VERIFICACIÓN"
+    const { passwordService } = await import('@/services/api.js')
+    await passwordService.resetPassword(userEmail, pwForm.value.codigo, pwForm.value.newPw)
+
+    pwSuccess.value = '✅ Contraseña actualizada correctamente.'
+    pwForm.value = { current: '', newPw: '', confirm: '', codigo: '' }
+  } catch (err) {
+    pwError.value = err.message || 'No se pudo actualizar la contraseña.'
+  } finally {
+    pwLoading.value = false
+  }
 }
 </script>
 
@@ -382,6 +440,91 @@ const saveSettings = () => {
             </div>
             <p class="app-version">VERSIÓN DE LA APP 4.2.0-ASTRA</p>
           </div>
+          <!-- Cambiar Contraseña —— tarjeta extra ancho completo -->
+          <div class="glass-card pw-card">
+            <div class="card-header">
+              <span class="card-icon gold">🔑</span>
+              <h3>Cambiar Contraseña</h3>
+            </div>
+
+            <!-- Feedback -->
+            <p v-if="pwError"   class="pw-feedback error">{{ pwError }}</p>
+            <p v-if="pwSuccess" class="pw-feedback success">{{ pwSuccess }}</p>
+
+            <div class="pw-fields">
+              <!-- Contraseña actual -->
+              <div class="field">
+                <label>CONTRASEÑA ACTUAL</label>
+                <div class="input-wrapper">
+                  <input
+                    :type="showCurrent ? 'text' : 'password'"
+                    v-model="pwForm.current"
+                    placeholder="Tu contraseña actual"
+                    class="pw-input"
+                    autocomplete="current-password"
+                  />
+                  <span class="eye-btn" @click="showCurrent = !showCurrent">{{ showCurrent ? '🙈' : '👁️' }}</span>
+                </div>
+              </div>
+
+              <!-- Nueva contraseña -->
+              <div class="field">
+                <label>NUEVA CONTRASEÑA</label>
+                <div class="input-wrapper">
+                  <input
+                    :type="showNew ? 'text' : 'password'"
+                    v-model="pwForm.newPw"
+                    placeholder="Mín. 8 caracteres, 1 mayúscula, 1 número"
+                    class="pw-input"
+                    autocomplete="new-password"
+                  />
+                  <span class="eye-btn" @click="showNew = !showNew">{{ showNew ? '🙈' : '👁️' }}</span>
+                </div>
+              </div>
+
+              <!-- Confirmar contraseña -->
+              <div class="field">
+                <label>CONFIRMAR CONTRASEÑA</label>
+                <div class="input-wrapper">
+                  <input
+                    :type="showConfirm ? 'text' : 'password'"
+                    v-model="pwForm.confirm"
+                    placeholder="Repite la nueva contraseña"
+                    class="pw-input"
+                    autocomplete="new-password"
+                  />
+                  <span class="eye-btn" @click="showConfirm = !showConfirm">{{ showConfirm ? '🙈' : '👁️' }}</span>
+                </div>
+              </div>
+
+              <!-- Código de verificación -->
+              <div class="field">
+                <label>CÓDIGO DE VERIFICACIÓN</label>
+                <div class="input-wrapper">
+                  <input
+                    type="text"
+                    v-model="pwForm.codigo"
+                    placeholder="6 dígitos"
+                    class="pw-input codigo-input"
+                    maxlength="6"
+                    inputmode="numeric"
+                    pattern="[0-9]{6}"
+                  />
+                  <span class="eye-btn static">🔐</span>
+                </div>
+                <p class="field-hint">Ingresa el código de 6 dígitos enviado a tu correo.</p>
+              </div>
+
+              <button
+                class="btn-change-pw"
+                @click="changePassword"
+                :disabled="pwLoading"
+              >
+                <span v-if="pwLoading">⏳ ACTUALIZANDO...</span>
+                <span v-else>🔐 ACTUALIZAR CONTRASEÑA</span>
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- FOOTER ACTIONS -->
@@ -584,6 +727,36 @@ const saveSettings = () => {
   padding: 3rem 4rem;
 }
 
+@media (max-width: 1200px) {
+  .scrollable-content { padding: 2.5rem 2.5rem; }
+}
+
+@media (max-width: 900px) {
+  .scrollable-content { padding: 2rem 1.5rem; }
+  .settings-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .pw-fields {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .scrollable-content { padding: 1.5rem 1rem; }
+  .settings-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .pw-fields {
+    grid-template-columns: 1fr !important;
+  }
+  .welcome-text h2 { font-size: 1.6rem; }
+  .profile-main-content { flex-direction: column; text-align: center; }
+  .profile-actions { justify-content: center; }
+  .footer-actions { flex-direction: column; gap: 1rem; }
+  .btn-logout, .btn-save { width: 100%; text-align: center; }
+  .sidebar-settings { display: none; }
+}
+
 .welcome-text h2 {
   font-size: 2.2rem;
   font-weight: 700;
@@ -738,9 +911,10 @@ const saveSettings = () => {
 
 .settings-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 2rem;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
   margin-bottom: 5rem;
+  align-items: start;
 }
 
 .glass-card {
@@ -1084,4 +1258,128 @@ const saveSettings = () => {
 .scrollable-content::-webkit-scrollbar { width: 6px; }
 .scrollable-content::-webkit-scrollbar-track { background: transparent; }
 .scrollable-content::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+
+/* ─── Tarjeta Cambio de Contraseña ─────────────────────────── */
+.pw-card {
+  grid-column: 1 / -1;  /* ocupa todo el ancho del grid */
+}
+
+.pw-fields {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+
+/* El botón ocupa toda la fila */
+.btn-change-pw {
+  grid-column: 1 / -1;
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  border: none;
+  padding: 1.1rem 2rem;
+  border-radius: 14px;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+  margin-top: 0.5rem;
+}
+
+.btn-change-pw:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(99, 102, 241, 0.5);
+}
+
+.btn-change-pw:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Campos de contraseña */
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.pw-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 0.9rem 2.8rem 0.9rem 1rem;
+  color: #fff;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  box-sizing: border-box;
+}
+
+.pw-input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.25);
+}
+
+.pw-input::placeholder { color: rgba(255, 255, 255, 0.3); }
+
+.codigo-input {
+  letter-spacing: 6px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.eye-btn {
+  position: absolute;
+  right: 0.8rem;
+  font-size: 1.1rem;
+  cursor: pointer;
+  user-select: none;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+.eye-btn:hover { opacity: 1; }
+.eye-btn.static { cursor: default; }
+
+/* Mensajes de feedback */
+.pw-feedback {
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.8rem 1.2rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  letter-spacing: 0.5px;
+}
+
+.pw-feedback.error {
+  background: rgba(255, 50, 50, 0.1);
+  border: 1px solid rgba(255, 50, 50, 0.3);
+  color: #ff6b6b;
+}
+
+.pw-feedback.success {
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: #4ade80;
+}
+
+/* ícono dorado para la tarjeta de contraseña */
+.card-icon.gold {
+  background: rgba(251, 191, 36, 0.1);
+  color: #fbbf24;
+}
+
+.field-hint {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.35);
+  margin-top: 0.4rem;
+  letter-spacing: 0.3px;
+}
+
+@media (max-width: 768px) {
+  .pw-fields { grid-template-columns: 1fr; }
+}
 </style>

@@ -35,13 +35,6 @@ const roles = computed(() => [
     description: t('auth.roles.traveler.desc'),
     icon: "✦",
   },
-  {
-    id: 2,
-    name: t('auth.roles.guide.name'),
-    label: t('auth.roles.guide.label'),
-    description: t('auth.roles.guide.desc'),
-    icon: "🔭",
-  },
 ])
 
 const loginForm = reactive({ email: "", password: "" });
@@ -73,8 +66,28 @@ function switchMode(newMode) {
 }
 
 async function handleLogin() {
-  error.value = "";
+  // --- MOCK ADMIN LOGIN ---
+  const isAdminEmail = loginForm.email === 'santiagocisneros046@gmail.com' || loginForm.email === 'santiagocisneros046@gamil.com';
+  if (isAdminEmail && loginForm.password === '123456') {
+    loading.value = true;
+    error.value = "";
+    setTimeout(() => {
+      const mockUser = { 
+        id: 999, 
+        id_usuario: 999,
+        nombre: 'SANTIAGO CISNEROS', 
+        email: loginForm.email, 
+        id_rol: 2,
+        role: 'GUÍA CÓSMICO'
+      };
+      authStore.setSession('admin-cosmic-token', mockUser);
+      router.push("/guia-dashboard");
+      loading.value = false;
+    }, 800);
+    return;
+  }
 
+  error.value = "";
   // Validar con utils/validators.js
   const validationError = firstError(
     required(loginForm.email, 'El email'),
@@ -90,10 +103,19 @@ async function handleLogin() {
   try {
     const data = await authService.login(loginForm.email, loginForm.password);
 
-    // Usar authStore en lugar de setItem directo
-    authStore.setSession(data.token, data.user[0]);
+    // Manejar respuesta tanto si user es array como si es objeto
+    const userData = Array.isArray(data.user) ? data.user[0] : data.user;
 
-    router.push("/alineacion");
+    // Usar authStore en lugar de setItem directo
+    authStore.setSession(data.token, userData);
+
+    // Redirigir según el rol (2 = Guía/Admin)
+    const roleId = userData.id_rol || userData.role_id;
+    if (roleId === 2) {
+      router.push("/guia-dashboard");
+    } else {
+      router.push("/alineacion");
+    }
   } catch (e) {
     error.value = e.message;
   } finally {
@@ -230,7 +252,6 @@ async function handleEtherLogin() {
     <div v-if="step === 1" class="role-selection">
       <div class="selection-header">
         <h1 class="stellar-title">{{ t('auth.identity') }}</h1>
-        <p class="stellar-subtitle">{{ t('auth.subtitle') }}</p>
       </div>
 
       <div class="role-grid">
@@ -556,7 +577,7 @@ async function handleEtherLogin() {
 
 <style scoped>
 .auth-page {
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -566,7 +587,7 @@ async function handleEtherLogin() {
     #1b1641 50%,
     #0f0c29 100%
   );
-  padding: 2rem;
+  padding: 0.5rem;
   position: relative;
   overflow: hidden;
   font-family: "Inter", sans-serif;
@@ -709,9 +730,9 @@ async function handleEtherLogin() {
   backdrop-filter: blur(30px);
   border: 1px solid rgba(201, 169, 110, 0.2);
   border-radius: 32px;
-  padding: 3rem;
+  padding: 1rem 1.5rem;
   width: 100%;
-  max-width: 480px;
+  max-width: 550px;
   position: relative;
   z-index: 10;
   animation: slideUp 0.6s ease-out;
@@ -719,40 +740,45 @@ async function handleEtherLogin() {
 
 .back-btn {
   position: absolute;
-  top: 1.5rem;
-  left: 1.5rem;
-  background: transparent;
-  border: none;
+  top: 1rem;
+  left: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   color: rgba(255, 255, 255, 0.5);
+  padding: 0.3rem 0.7rem;
+  border-radius: 8px;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.9rem;
-  transition: color 0.3s;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  transition: all 0.3s;
+  z-index: 20;
 }
 
 .back-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
   color: #c9a96e;
+  border-color: rgba(201, 169, 110, 0.3);
 }
 
 .auth-header {
   text-align: center;
-  margin-bottom: 2.5rem;
+  margin-bottom: 0.5rem;
 }
 
 .logo-icon {
-  font-size: 3rem;
+  font-size: 1.8rem;
   color: #c9a96e;
-  margin-bottom: 1rem;
+  margin-bottom: 0.2rem;
   animation: pulse 3s infinite;
 }
 
 .brand {
-  font-size: 2.2rem;
+  font-size: 1.5rem;
   font-weight: 800;
   color: #fff;
-  letter-spacing: 4px;
+  letter-spacing: 2px;
   margin: 0;
 }
 
@@ -760,20 +786,21 @@ async function handleEtherLogin() {
   display: flex;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 16px;
-  padding: 6px;
-  margin-bottom: 2rem;
+  padding: 2px;
+  margin-bottom: 0.5rem;
 }
 
 .tab {
   flex: 1;
-  padding: 0.8rem;
+  padding: 0.4rem;
   border: none;
-  border-radius: 12px;
+  border-radius: 8px;
   color: rgba(255, 255, 255, 0.4);
   background: transparent;
   cursor: pointer;
   font-weight: 600;
   transition: all 0.3s;
+  font-size: 0.85rem;
 }
 
 .tab.active {
@@ -782,16 +809,16 @@ async function handleEtherLogin() {
 }
 
 .field {
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.4rem;
 }
 
 .field label {
   display: block;
   color: #c9a96e;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 700;
-  letter-spacing: 1.5px;
-  margin-bottom: 0.6rem;
+  letter-spacing: 1px;
+  margin-bottom: 0.2rem;
 }
 
 .input-wrapper {
@@ -803,10 +830,10 @@ async function handleEtherLogin() {
   width: 100%;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 1rem 1.2rem;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
   color: #fff;
-  font-size: 1rem;
+  font-size: 0.9rem;
   outline: none;
   transition: all 0.3s;
 }
@@ -854,16 +881,16 @@ async function handleEtherLogin() {
 
 .btn-primary {
   width: 100%;
-  padding: 1.2rem;
+  padding: 0.5rem;
   background: linear-gradient(135deg, #c9a96e 0%, #a07840 100%);
   border: none;
-  border-radius: 12px;
+  border-radius: 8px;
   color: #0f0c29;
-  font-size: 1.1rem;
+  font-size: 0.85rem;
   font-weight: 800;
   cursor: pointer;
   transition: all 0.3s;
-  margin-top: 1rem;
+  margin-top: 0.4rem;
   letter-spacing: 1px;
 }
 
@@ -890,9 +917,9 @@ async function handleEtherLogin() {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: -0.5rem;
-  margin-bottom: 1.5rem;
-  font-size: 0.8rem;
+  margin-top: -0.2rem;
+  margin-bottom: 1rem;
+  font-size: 0.65rem;
 }
 
 .checkbox-container {
@@ -913,7 +940,7 @@ async function handleEtherLogin() {
 
 .divider {
   text-align: center;
-  margin: 2rem 0;
+  margin: 0.5rem 0;
   position: relative;
 }
 
@@ -941,16 +968,16 @@ async function handleEtherLogin() {
 .social-login {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: 0.5rem;
 }
 
 .btn-social {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 0.8rem;
+  border-radius: 8px;
+  padding: 0.4rem;
   color: #fff;
-  font-size: 0.75rem;
+  font-size: 0.6rem;
   font-weight: 600;
   cursor: pointer;
   display: flex;
@@ -971,18 +998,18 @@ async function handleEtherLogin() {
 }
 
 .auth-footer {
-  margin-top: 3rem;
+  margin-top: 0.5rem;
   text-align: center;
 }
 
 .footer-links {
   display: flex;
   justify-content: center;
-  gap: 2rem;
+  gap: 1rem;
   color: rgba(255, 255, 255, 0.3);
-  font-size: 0.7rem;
-  letter-spacing: 2px;
-  margin-bottom: 2rem;
+  font-size: 0.65rem;
+  letter-spacing: 1px;
+  margin-bottom: 0.5rem;
 }
 
 .footer-links span {
@@ -996,11 +1023,11 @@ async function handleEtherLogin() {
 
 .footer-tag {
   color: rgba(255, 255, 255, 0.1);
-  font-size: 0.6rem;
-  letter-spacing: 4px;
+  font-size: 0.55rem;
+  letter-spacing: 2px;
   border: 1px solid rgba(255, 255, 255, 0.05);
   display: inline-block;
-  padding: 1rem 2rem;
+  padding: 0.5rem 1.5rem;
   border-radius: 50px;
 }
 .alert-success {

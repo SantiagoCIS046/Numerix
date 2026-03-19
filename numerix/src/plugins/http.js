@@ -69,7 +69,11 @@ async function request(endpoint, method = 'GET', body = null, auth = false) {
     // Interceptor de RESPONSE: manejar errores HTTP
     if (!response.ok) {
       // Si el backend devuelve 401, limpiar la sesión automáticamente
-      if (response.status === 401) {
+      // EXCEPCIÓN: No redirigir si es el Administrador (Guía) para permitir modo offline/mock
+      const user = authStore.currentUser.value
+      const isGuidance = (user?.id_rol || user?.role_id) === 2
+
+      if (response.status === 401 && !isGuidance) {
         authStore.clearSession()
         window.location.href = '/auth'
       }

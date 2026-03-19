@@ -2,6 +2,9 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
+import { notificationsService } from '../services/api.js'
+import { authStore } from '@/store/auth.js'
+
 
 const { t } = useI18n()
 
@@ -152,6 +155,28 @@ function handleSync() {
     const history = JSON.parse(localStorage.getItem('cosmic_history') || '[]')
     history.unshift(newTransaction)
     localStorage.setItem('cosmic_history', JSON.stringify(history))
+
+    // Calculate Expiration (30 days from now)
+    const expirationDate = new Date()
+    expirationDate.setDate(expirationDate.getDate() + 30)
+    const vencimientoStr = expirationDate.toISOString().split('T')[0] // YYYY-MM-DD
+
+    // Update global auth state & localStorage user
+    const user = authStore.currentUser.value
+    if (user) {
+      const updatedUser = { 
+        ...user, 
+        plan: finalPlan.name, 
+        vencimiento: vencimientoStr 
+      }
+      // Update session (triggers reactivity)
+      authStore.setSession(authStore.token.value, updatedUser)
+
+      // TRIGGER EMAIL NOTIFICATION
+      notificationsService.sendSubscriptionSuccess(user.email, finalPlan.name)
+        .then(() => console.log('Email de éxito enviado programáticamente'))
+        .catch(err => console.error('Error enviando email:', err))
+    }
     
     isSyncing.value = false
     showAlert(t('checkout.alerts.success'), 'success')

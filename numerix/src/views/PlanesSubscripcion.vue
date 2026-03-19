@@ -17,44 +17,53 @@ function showAlert(message, type = 'info') {
   }, 4000)
 }
 
-const plans = computed(() => [
-  {
-    id: 'lunar',
-    name: t('subscriptions.plans.lunar.name'),
-    code: t('subscriptions.plans.lunar.code'),
-    price: '$12',
-    period: '/LUNA',
-    description: t('subscriptions.plans.lunar.description'),
-    features: t('subscriptions.plans.lunar.features'),
-    buttonClass: 'btn-outline',
-    icon: '🌙'
-  },
-  {
-    id: 'planetario',
-    name: t('subscriptions.plans.planetario.name'),
-    code: t('subscriptions.plans.planetario.code'),
-    price: '$34',
-    period: '/LUNA',
-    description: t('subscriptions.plans.planetario.description'),
-    features: t('subscriptions.plans.planetario.features'),
-    buttonClass: 'btn-blue',
-    icon: '🪐',
-    highlight: false
-  },
-  {
-    id: 'supernova',
-    name: t('subscriptions.plans.supernova.name'),
-    code: t('subscriptions.plans.supernova.code'),
-    price: '$88',
-    period: '/LUNA',
-    description: t('subscriptions.plans.supernova.description'),
-    features: t('subscriptions.plans.supernova.features'),
-    buttonClass: 'btn-gold',
-    icon: '⭐',
-    highlight: true,
-    tag: t('subscriptions.plans.supernova.tag')
+const plans = computed(() => {
+  const storedCosts = JSON.parse(localStorage.getItem('numerix_plan_costs')) || {
+    lunar: 12,
+    planetario: 34,
+    supernova: 88
   }
-])
+
+  return [
+    {
+      id: 'lunar',
+      name: t('subscriptions.plans.lunar.name'),
+      code: t('subscriptions.plans.lunar.code'),
+      price: `$${storedCosts.lunar}`,
+      period: '/LUNA',
+      description: t('subscriptions.plans.lunar.description'),
+      features: t('subscriptions.plans.lunar.features'),
+      buttonClass: 'btn-outline',
+      icon: '🌙'
+    },
+    {
+      id: 'planetario',
+      name: t('subscriptions.plans.planetario.name'),
+      code: t('subscriptions.plans.planetario.code'),
+      price: `$${storedCosts.planetario}`,
+      period: '/LUNA',
+      description: t('subscriptions.plans.planetario.description'),
+      features: t('subscriptions.plans.planetario.features'),
+      buttonClass: 'btn-blue',
+      icon: '🪐',
+      highlight: false
+    },
+    {
+      id: 'supernova',
+      name: t('subscriptions.plans.supernova.name'),
+      code: t('subscriptions.plans.supernova.code'),
+      price: `$${storedCosts.supernova}`,
+      period: '/LUNA',
+      description: t('subscriptions.plans.supernova.description'),
+      features: t('subscriptions.plans.supernova.features'),
+      buttonClass: 'btn-gold',
+      icon: '⭐',
+      highlight: true,
+      tag: t('subscriptions.plans.supernova.tag')
+    }
+  ]
+})
+
 
 function goBack() {
   router.back()
@@ -317,10 +326,11 @@ function selectPlan(plan) {
 
 .brand-name {
   font-family: 'Cinzel', serif;
-  font-size: 1.2rem;
-  letter-spacing: 4px;
+  font-size: 1rem;
+  letter-spacing: 3px;
   font-weight: 400;
 }
+
 
 .brand-name span {
   font-weight: 700;
@@ -329,19 +339,24 @@ function selectPlan(plan) {
 
 .sub-nav {
   display: flex;
-  gap: 3rem;
+  gap: 2rem;
+  align-items: center;
 }
+
 
 .sub-nav a {
   color: rgba(255,255,255,0.5);
   text-decoration: none;
-  font-size: 0.75rem;
-  letter-spacing: 3px;
+  font-size: 0.7rem;
+  letter-spacing: 2px;
   font-weight: 600;
   transition: color 0.3s;
-  padding-bottom: 5px;
+  padding-bottom: 8px;
   position: relative;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
+
 
 .sub-nav a:hover, .sub-nav a.active {
   color: #fff;
@@ -399,25 +414,30 @@ function selectPlan(plan) {
 /* Main Content */
 .sub-content {
   text-align: center;
-  padding: 4rem 5% 8rem;
+  padding: 1.5rem 5% 4rem;
   z-index: 5;
 }
 
+
+
 .section-tag {
   color: #6366f1;
-  font-size: 0.7rem;
-  letter-spacing: 5px;
-  margin-bottom: 2rem;
+  font-size: 0.65rem;
+  letter-spacing: 4px;
+  margin-bottom: 1rem;
   font-weight: 600;
 }
 
+
 .section-title {
   font-family: 'Cinzel', serif;
-  font-size: 5rem;
+  font-size: 2.8rem;
   letter-spacing: 2px;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
   font-weight: 400;
 }
+
+
 
 .section-title span {
   font-style: italic;
@@ -426,33 +446,39 @@ function selectPlan(plan) {
 }
 
 .section-desc {
-  font-size: 1.1rem;
+  font-size: 0.85rem;
   color: rgba(255,255,255,0.6);
-  line-height: 1.8;
-  max-width: 800px;
-  margin: 0 auto 6rem;
+  line-height: 1.5;
+  max-width: 600px;
+  margin: 0 auto 3rem;
 }
+
+
 
 /* Plans Grid */
 .plans-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 2.5rem;
-  max-width: 1400px;
+  gap: 1.5rem;
+  max-width: 1200px;
   margin: 0 auto;
 }
+
 
 .plan-card {
   background: rgba(15, 20, 35, 0.4);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255,255,255,0.05);
   border-radius: 4px;
-  padding: 4rem 3rem;
+  padding: 2rem 1.5rem;
   display: flex;
   flex-direction: column;
   position: relative;
   transition: all 0.4s;
 }
+
+
+
 
 .plan-card:hover {
   border-color: rgba(255,255,255,0.2);
@@ -470,17 +496,17 @@ function selectPlan(plan) {
 }
 
 .plan-icon {
-  width: 60px; height: 60px;
+  width: 45px; height: 45px;
   background: rgba(99, 102, 241, 0.1);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 2.5rem;
+  margin: 0 auto 1.2rem;
   position: relative;
 }
 
-.icon { font-size: 1.5rem; }
+.icon { font-size: 1.2rem; }
 
 .icon-ring {
   position: absolute;
@@ -491,37 +517,44 @@ function selectPlan(plan) {
 
 .plan-name {
   font-family: 'Cinzel', serif;
-  font-size: 2rem;
+  font-size: 1.2rem;
   letter-spacing: 2px;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.3rem;
 }
+
+
 
 .plan-code {
   font-size: 0.65rem;
   color: #6366f1;
   letter-spacing: 2px;
-  margin-bottom: 2rem;
+  margin-bottom: 0.8rem;
   font-weight: 600;
 }
 
+
 .plan-description {
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   font-style: italic;
   color: rgba(255,255,255,0.5);
-  line-height: 1.6;
-  margin-bottom: 3rem;
-  min-height: 4.8rem;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+  min-height: 3.5rem;
 }
 
+
 .plan-price {
-  margin-bottom: 4rem;
+  margin-bottom: 2rem;
+
 }
 
 .currency {
   font-family: 'Cinzel', serif;
-  font-size: 3.5rem;
+  font-size: 2rem;
   font-weight: bold;
 }
+
+
 
 .period {
   font-size: 0.7rem;
@@ -533,17 +566,22 @@ function selectPlan(plan) {
 .plan-features {
   list-style: none;
   padding: 0;
-  margin: 0 0 5rem 0;
+  margin: 0 0 1.5rem 0;
   text-align: left;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 0.8rem;
 }
 
+
+
+
 .plan-features li {
-  font-size: 0.75rem;
-  letter-spacing: 1.5px;
+  font-size: 0.65rem;
+  letter-spacing: 1.2px;
   color: rgba(255,255,255,0.7);
+  text-transform: uppercase;
+
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -553,11 +591,11 @@ function selectPlan(plan) {
 
 .btn-plan {
   margin-top: auto;
-  padding: 1.2rem;
+  padding: 0.8rem 1.2rem;
   border-radius: 4px;
   font-family: 'Cinzel', serif;
-  font-size: 0.9rem;
-  letter-spacing: 3px;
+  font-size: 0.75rem;
+  letter-spacing: 2px;
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s;
@@ -565,6 +603,7 @@ function selectPlan(plan) {
   color: #fff;
   border: 1px solid rgba(255,255,255,0.2);
 }
+
 
 .plan-highlight {
   background: rgba(20, 25, 45, 0.6);
@@ -649,8 +688,11 @@ function selectPlan(plan) {
 
 .footer-links {
   display: flex;
-  gap: 3rem;
+  gap: 2rem;
+  text-transform: uppercase;
+  font-size: 0.6rem;
 }
+
 
 .footer-links a {
   color: inherit;

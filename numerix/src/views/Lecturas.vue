@@ -5,6 +5,8 @@ import { useI18n } from '@/composables/useI18n'
 import { lecturasService } from '../services/api.js'
 import { authStore } from '@/store/auth.js'
 import Galaxy from '../components/Galaxy.vue'
+import SubscriptionOverlay from '../components/SubscriptionOverlay.vue'
+import { isSubscribed } from '@/store/auth.js'
 
 const { t } = useI18n()
 
@@ -142,6 +144,8 @@ function showAlert(message, type = 'info') {
       :hue-shift="240"
       class="galaxy-bg"
     />
+
+    <SubscriptionOverlay v-if="!isSubscribed" />
 
     <!-- Bootstrap Alert -->
     <div 

@@ -104,10 +104,10 @@ async function handleSubmit() {
     }))
 
     // 2. Persistir en el Backend si hay sesión activa
-    const store = authStore()
-    if (store.currentUser?.id) {
+    const store = authStore
+    if (store.currentUser.value?.id) {
       await lecturasService.generateMain(
-        store.currentUser.id, 
+        store.currentUser.value.id, 
         formData.value.fullName, 
         formData.value.birthDate
       )

@@ -3,6 +3,9 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import Galaxy from '../components/Galaxy.vue'
+import SubscriptionOverlay from '../components/SubscriptionOverlay.vue'
+import { isSubscribed } from '@/store/auth.js'
+
 
 const { t } = useI18n()
 
@@ -78,6 +81,8 @@ function goTo(path) {
       :hue-shift="280"
       class="galaxy-bg"
     />
+
+    <SubscriptionOverlay v-if="!isSubscribed" />
 
     <!-- Bootstrap Alert -->
     <div 

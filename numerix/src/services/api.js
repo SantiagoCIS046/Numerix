@@ -197,3 +197,31 @@ export const pagosService = {
     return httpClient.delete(`/pagos/${userId}/${payId}`, true);
   },
 };
+
+// ─────────────────────────────────────────────────────────
+// NOTIFICACIONES — /api/usuarios/notify
+// ─────────────────────────────────────────────────────────
+export const notificationsService = {
+  /**
+   * Enviar correo de éxito de suscripción
+   * POST /api/usuarios/notify/subscription-success
+   */
+  sendSubscriptionSuccess(email, planName) {
+    return httpClient.post("/usuarios/notify/subscription-success", { 
+      email, 
+      planName 
+    });
+  },
+
+  /**
+   * Enviar recordatorio de vencimiento (p.ej. 10 días antes)
+   * POST /api/usuarios/notify/expiration-reminder
+   */
+  sendExpirationReminder(email, planName, daysRemaining) {
+    return httpClient.post("/usuarios/notify/expiration-reminder", { 
+      email, 
+      planName, 
+      daysRemaining 
+    });
+  },
+};

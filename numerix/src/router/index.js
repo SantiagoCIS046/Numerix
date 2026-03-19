@@ -110,7 +110,7 @@ router.beforeEach((to) => {
   const tokenExists = hasValidToken()
   const user = currentUser.value
   const roleId = user?.id_rol || user?.role_id
-
+  
   // 1. Acceso a rutas protegidas sin token
   if (!isPublic && !tokenExists) {
     return { name: 'Auth' }

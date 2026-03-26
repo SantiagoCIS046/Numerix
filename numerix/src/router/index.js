@@ -11,8 +11,9 @@ import Revelacion from "../views/Revelacion.vue";
 import FullReport from "../views/FullReport.vue";
 import PlanesSubscripcion from "../views/PlanesSubscripcion.vue";
 import HistoriaEstelar from "../views/HistoriaEstelar.vue";
-import MetodosPago from "../views/MetodosPago.vue";
 import HistorialPagos from "../views/HistorialPagos.vue";
+import pagos from "../views/payment.vue";
+import payment_result from "../views/payment-result.vue";
 
 const routes = [
   {
@@ -77,8 +78,27 @@ const routes = [
   },
   {
     path: "/pagos",
-    name: "MetodosPago",
-    component: MetodosPago,
+    name: "Pagos",
+    component: pagos,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: "/pagos/exito",
+    name: "PagoExito",
+    component: payment_result,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: "/pagos/fallo",
+    name: "PagoFallo",
+    component: payment_result,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: "/pagos/pendiente",
+    name: "PagoPendiente",
+    component: payment_result,
+    meta: { requiresAuth: true }
   },
   {
     path: "/historial-pagos",

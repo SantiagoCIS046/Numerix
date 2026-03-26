@@ -13,9 +13,10 @@ import { authStore } from '@/store/auth.js'
 import { uiStore } from '@/store/ui.js'
 
 // ─── Base URL ────────────────────────────────────────────────
-const API_BASE = import.meta.env.DEV
-  ? '/api'
-  : `${import.meta.env.VITE_API_URL}/api`
+// En desarrollo usamos el proxy /api de Vite.
+// En producción se usa VITE_API_URL.
+const VITE_API_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+const API_BASE = VITE_API_URL ? `${VITE_API_URL}/api` : "/api";
 
 // ─── Cliente central ─────────────────────────────────────────
 
@@ -47,52 +48,38 @@ async function request(endpoint, method = 'GET', body = null, auth = false) {
   try {
     const fullUrl = `${API_BASE}${endpoint}`
 
-    // Log en desarrollo
+    // ─── MOCK LOGIC (Modo Frontend Exclusivo) ─────────────────
     if (import.meta.env.DEV) {
-      console.log(`[HTTP] ${method} ${fullUrl}`, body ?? '')
+      console.log(`[MOCK HTTP] ${method} ${endpoint}`, body ?? '')
     }
 
-    const response = await fetch(fullUrl, config)
+    // Simulamos un retraso de red
+    await new Promise(resolve => setTimeout(resolve, 800))
 
-    if (import.meta.env.DEV) {
-      console.log(`[HTTP] ${response.status} ${fullUrl}`)
-    }
-
-    // Interceptor de RESPONSE: parsear JSON
-    let data
-    try {
-      data = await response.json()
-    } catch {
-      throw new Error(`El servidor respondió con un formato inesperado (${response.status})`)
-    }
-
-    // Interceptor de RESPONSE: manejar errores HTTP
-    if (!response.ok) {
-      // Si el backend devuelve 401, limpiar la sesión automáticamente
-      // EXCEPCIÓN: No redirigir si es el Administrador (Guía) para permitir modo offline/mock
-      const user = authStore.currentUser.value
-      const isGuidance = (user?.id_rol || user?.role_id) === 2
-
-      if (response.status === 401 && !isGuidance) {
-        authStore.clearSession()
-        window.location.href = '/auth'
+    // MOCK RESPONSES
+    if (endpoint === '/usuarios/login') {
+      return { 
+        token: 'mock-jwt-token-' + Date.now(), 
+        user: { 
+          id: 'mock-user-123', 
+          nombre: 'Viajero Astral', 
+          email: body.email, 
+          id_rol: 1, 
+          plan: 'Ninguno' 
+        } 
       }
-
-      const message =
-        data?.errors || data?.msg || data?.message || `Error ${response.status}`
-      throw new Error(typeof message === 'string' ? message : JSON.stringify(message))
     }
 
-    return data
+    if (endpoint === '/usuarios/register') {
+      return { msg: 'Usuario registrado (MOCK)' }
+    }
+
+    // Default mock response
+    return { status: 'ok', message: 'Respuesta simulada', data: [] }
 
   } catch (err) {
-    // Interceptor de ERROR: detectar problemas de red
-    if (err.name === 'TypeError') {
-      throw new Error('No se pudo conectar al servidor. Verifica que el backend esté activo.')
-    }
     throw err
   } finally {
-    // Siempre detener el loading, incluso si hay error
     uiStore.stopLoading()
   }
 }

@@ -1,0 +1,9 @@
+MongooseError: The `uri` parameter to `openUri()` must be a string, got "undefined". Make sure the first parameter to `mongoose.connect()` or `mongoose.createConnection()` is a string.
+    at NativeConnection.createClient (C:\Users\USUARIO\Documentos\Santiago.SENA\Prof.Miguel\numerologia\node_modules\mongoose\lib\drivers\node-mongodb-native\connection.js:230:11)
+    at NativeConnection.openUri (C:\Users\USUARIO\Documentos\Santiago.SENA\Prof.Miguel\numerologia\node_modules\mongoose\lib\connection.js:1075:34)
+    at Mongoose.connect (C:\Users\USUARIO\Documentos\Santiago.SENA\Prof.Miguel\numerologia\node_modules\mongoose\lib\mongoose.js:451:15)
+    at connectDB (file:///C:/Users/USUARIO/Documentos/Santiago.SENA/Prof.Miguel/numerologia/config/mongo.js:5:24)
+    at file:///C:/Users/USUARIO/Documentos/Santiago.SENA/Prof.Miguel/numerologia/app.js:16:7
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:116:5)

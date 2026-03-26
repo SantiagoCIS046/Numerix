@@ -66,27 +66,6 @@ function switchMode(newMode) {
 }
 
 async function handleLogin() {
-  // --- MOCK ADMIN LOGIN ---
-  const isAdminEmail = loginForm.email === 'santiagocisneros046@gmail.com' || loginForm.email === 'santiagocisneros046@gamil.com';
-  if (isAdminEmail && loginForm.password === '123456') {
-    loading.value = true;
-    error.value = "";
-    setTimeout(() => {
-      const mockUser = { 
-        id: 999, 
-        id_usuario: 999,
-        nombre: 'SANTIAGO CISNEROS', 
-        email: loginForm.email, 
-        id_rol: 2,
-        role: 'GUÍA CÓSMICO'
-      };
-      authStore.setSession('admin-cosmic-token', mockUser);
-      router.push("/guia-dashboard");
-      loading.value = false;
-    }, 800);
-    return;
-  }
-
   error.value = "";
   // Validar con utils/validators.js
   const validationError = firstError(

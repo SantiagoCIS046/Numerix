@@ -2,12 +2,23 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
-import { lecturasService } from '@/services/api.js'
-import { authStore } from '@/store/auth.js'
+import { lecturasService, usuariosService } from '@/services/api.js'
+import { useAuthStore } from '@/store/auth.js'
+import { useNotificationStore } from '@/store/notifications.js'
+
+const auth = useAuthStore()
+const notifStore = useNotificationStore()
 
 const { t } = useI18n()
 const router = useRouter()
 const isFromHome = ref(false)
+const today = new Date().toISOString().split('T')[0]
+const loading = ref(false)
+
+// Refs para scroll
+const nameInput = ref(null)
+const birthDateInput = ref(null)
+const visionInput = ref(null)
 
 onMounted(() => {
   // history.state is populated by vue-router when using push with state
@@ -22,17 +33,16 @@ function goBackToHome() {
 
 
 // Pre-fill name and birth date from logged-in user
-const storedUser = localStorage.getItem('user')
-const loggedUser = storedUser ? JSON.parse(storedUser) : null
+const loggedUser = auth.user
 
 // Also check for previously saved alignment profile
 const storedAlignment = localStorage.getItem('alignmentProfile')
-const savedAlignment = storedAlignment ? JSON.parse(storedAlignment) : null
+const savedAlignment = JSON.parse(localStorage.getItem('user_alignment') || 'null')
 
-// Format fecha_nacimiento (YYYY-MM-DD) if it exists
-const rawFecha = loggedUser?.fecha_nacimiento || ''
+// PRIORIDAD: 1. Store Pinia, 2. LocalStorage (del registro/login), 3. Alineación guardada
+const rawFecha = loggedUser?.fecha_nacimiento || localStorage.getItem('user_birth_date') || ''
 const preFillDate = rawFecha
-  ? rawFecha.split('T')[0] // Handle ISO strings like "2000-01-15T00:00:00.000Z"
+  ? (rawFecha.includes('T') ? rawFecha.split('T')[0] : rawFecha) 
   : (savedAlignment?.birthDate || '')
 
 const formData = ref({
@@ -47,7 +57,7 @@ const formData = ref({
 
 const countries = [
   { code: 'CO', name: 'COLOMBIA', currency: 'COP', flag: '🇨🇴' },
-  { code: 'ES', name: 'ESPAÑA', currency: 'EUR', flag: '🇪🇸' },
+  { code: 'ES', name: 'ESTAÑA', currency: 'EUR', flag: '🇪🇸' },
   { code: 'US', name: 'ESTADOS UNIDOS', currency: 'USD', flag: '🇺🇸' },
   { code: 'MX', name: 'MÉXICO', currency: 'MXN', flag: '🇲🇽' },
   { code: 'AR', name: 'ARGENTINA', currency: 'ARS', flag: '🇦🇷' },
@@ -89,13 +99,26 @@ const statusClass = computed(() => ({
 async function handleSubmit() {
   if (!formData.value.fullName) {
     showAlert('Por favor ingresa tu nombre completo.')
+    nameInput.value?.focus()
     return
   }
   if (!formData.value.birthDate) {
     showAlert('La fecha de nacimiento es requerida.')
+    birthDateInput.value?.focus()
+    return
+  }
+  if (new Date(formData.value.birthDate) > new Date()) {
+    showAlert('No puedes haber nacido en el futuro. Por favor, calibra tu fecha de nacimiento.')
+    birthDateInput.value?.focus()
+    return
+  }
+  if (!formData.value.cosmicVision) {
+    showAlert('Por favor, susurra tus intenciones al campo de estrellas (Visión Cósmica).')
+    visionInput.value?.focus()
     return
   }
 
+  loading.value = true
   try {
     // 1. Guardar localmente para disponibilidad inmediata
     localStorage.setItem('alignmentProfile', JSON.stringify({
@@ -104,13 +127,30 @@ async function handleSubmit() {
     }))
 
     // 2. Persistir en el Backend si hay sesión activa
-    const store = authStore
-    if (store.currentUser.value?.id) {
+    const store = auth
+    const userId = store.user?.id || localStorage.getItem('user_id')
+    
+    if (userId) {
+      // Actualizar datos básicos en MongoDB
+      await usuariosService.update(userId, {
+        nombre: formData.value.fullName,
+        fecha_nacimiento: formData.value.birthDate
+      })
+      
+      // Generar lectura principal
       await lecturasService.generateMain(
-        store.currentUser.value.id, 
+        userId, 
         formData.value.fullName, 
         formData.value.birthDate
       )
+
+      notifStore.addNotification({
+        title: 'ALINEACIÓN COMPLETADA',
+        desc: 'Tu frecuencia ha sido sincronizada con el Nodo Central. Bienvenido al Dashboard.',
+        icon: '🧭',
+        type: 'success',
+        route: '/home'
+      })
       showAlert('¡Alineación exitosa! Sincronizando con el Nodo Principal...', 'success')
     } else {
       showAlert('Alineación guardada localmente. Inicia sesión para sincronizar con el cosmos.', 'info')
@@ -126,6 +166,8 @@ async function handleSubmit() {
     setTimeout(() => {
       router.push('/home')
     }, 3000)
+  } finally {
+    loading.value = false
   }
 }
 
@@ -161,6 +203,17 @@ function resetForm() {
   <div class="alignment-page">
     <div class="stars-bg"></div>
     <div class="radial-glow"></div>
+
+    <!-- Cosmic Loading Overlay -->
+    <Transition name="fade">
+      <div v-if="loading" class="cosmic-loading-overlay">
+        <div class="portal-spinner">
+          <div class="sun-core"></div>
+          <div class="orbit-electron"></div>
+        </div>
+        <p class="loading-text">SINCRONIZANDO TU ALMA CON EL COSMOS...</p>
+      </div>
+    </Transition>
 
     <!-- UI HEADERS -->
     <header class="alignment-header">
@@ -219,6 +272,7 @@ function resetForm() {
             <div class="form-group full-width">
               <label>{{ t('alignment.fullName') }}</label>
               <input
+                ref="nameInput"
                 type="text"
                 v-model="formData.fullName"
                 placeholder="Tu nombre ante el cosmos"
@@ -297,6 +351,7 @@ function resetForm() {
             <h3 class="section-num">III. <span class="section-text">{{ t('alignment.vision') }}</span></h3>
             <div class="textarea-container">
               <textarea 
+                ref="visionInput"
                 v-model="formData.cosmicVision" 
                 placeholder="Susurra tus intenciones al campo de estrellas..."
                 class="cosmic-textarea"
@@ -349,10 +404,18 @@ function resetForm() {
       <footer class="alignment-footer">
         <div class="status-msg">ESTADO: <span :class="statusClass">{{ formStatus }}</span></div>
 
-        <button class="btn-primary-stellar" @click="handleSubmit">
-          <span class="btn-text">{{ t('alignment.alignBtn') }}</span>
-          <span class="btn-star-icon">★</span>
-        </button>
+        <div class="form-actions-stellar">
+          <button class="btn-primary-stellar" @click="handleSubmit" :disabled="loading">
+            <template v-if="loading">
+              <div class="lds-hourglass"></div>
+              <span>ALINEANDO...</span>
+            </template>
+            <template v-else>
+              <span class="btn-text">{{ t('alignment.alignBtn') }}</span>
+              <span class="btn-star-icon">★</span>
+            </template>
+          </button>
+        </div>
 
         <button class="btn-reset" @click="resetForm">
           <span class="reset-icon">↺</span> {{ t('alignment.resetBtn') }}
@@ -1062,32 +1125,7 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 .status-progress { color: #c9a96e; }
 .status-incomplete { color: rgba(255, 255, 255, 0.4); }
 
-/* Cosmic Alert Top Responsive Fix */
-.cosmic-alert-top {
-  position: fixed;
-  top: 1.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 1100;
-  background: rgba(15, 12, 41, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #fff;
-  backdrop-filter: blur(15px);
-  -webkit-backdrop-filter: blur(15px);
-  box-shadow: 0 10px 40px rgba(0,0,0,0.5), 0 0 20px rgba(255, 255, 255, 0.1);
-  font-family: 'Outfit', sans-serif;
-  letter-spacing: 1px;
-  width: 90%;
-  max-width: 450px;
-  min-width: auto;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem 1.5rem;
-  transition: all 0.3s ease;
-}
-
+/* Media Queries */
 @media (max-width: 900px) {
   .alignment-page { padding: 1.5rem; }
   .grid-3 { grid-template-columns: 1fr 1fr; }
@@ -1114,6 +1152,110 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   .site-nav-footer { flex-direction: column; gap: 1.5rem; }
   .nav-links { flex-wrap: wrap; gap: 1rem; justify-content: center; }
   .btn-primary-stellar { padding: 1.2rem 2.5rem; font-size: 0.9rem; width: 100%; }
+}
+
+/* Cosmic Loading Overlay Styles */
+.cosmic-loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 5, 8, 0.9);
+  backdrop-filter: blur(15px);
+  z-index: 999999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+}
+
+.portal-spinner {
+  position: relative;
+  width: 100px;
+  height: 100px;
+}
+
+.sun-core {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 40px;
+  height: 40px;
+  background: radial-gradient(circle, #fff 0%, #c9a96e 70%, transparent 100%);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 40px rgba(201, 169, 110, 0.8), 0 0 80px rgba(201, 169, 110, 0.4);
+  animation: sunPulse 2s infinite ease-in-out;
+}
+
+.orbit-electron {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  animation: rotatePortal 3s linear infinite;
+}
+
+.orbit-electron::after {
+  content: "";
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 15px #fff;
+}
+
+.loading-text {
+  color: #c9a96e;
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-align: center;
+  animation: fadePulse 1.5s infinite;
+}
+
+@keyframes sunPulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+  50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+}
+
+@keyframes rotatePortal {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fadePulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+.fade-enter-active, .fade-leave-active { transition: opacity 0.5s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+
+/* HOURGLASS SPINNER REUSED */
+.lds-hourglass { display: inline-block; position: relative; width: 20px; height: 20px; margin-right: 10px; }
+.lds-hourglass:after {
+  content: " ";
+  display: block;
+  border-radius: 50%;
+  width: 0;
+  height: 0;
+  margin: 0;
+  box-sizing: border-box;
+  border: 10px solid #fff;
+  border-color: #fff transparent #fff transparent;
+  animation: lds-hourglass 1.2s infinite;
+}
+@keyframes lds-hourglass {
+  0% { transform: rotate(0); animation-timing-function: cubic-bezier(0.55, 0.055, 0.675, 0.19); }
+  50% { transform: rotate(900deg); animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1); }
+  100% { transform: rotate(1800deg); }
 }
 </style>
 

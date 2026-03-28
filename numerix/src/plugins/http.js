@@ -1,95 +1,59 @@
 /**
- * plugins/http.js — Cliente HTTP con interceptores
+ * plugins/http.js — Cliente HTTP basado en Axios (Unificado)
  * 
- * Reemplaza al anterior axios.js.
- * Integra el store de auth para tokens y el store de UI para loading.
- * 
- * USO:
- *   import { httpClient } from '@/plugins/http.js'
- *   const data = await httpClient.post('/usuarios/login', { email, password })
+ * Reemplaza al anterior axios.js y al cliente fetch temporal.
+ * Configurado con URL Absoluta para el túnel del profesor.
  */
 
-import { authStore } from '@/store/auth.js'
-import { uiStore } from '@/store/ui.js'
+import axios from 'axios'
+import { useAuthStore } from '@/store/auth.js'
 
-// ─── Base URL ────────────────────────────────────────────────
-// En desarrollo usamos el proxy /api de Vite.
-// En producción se usa VITE_API_URL.
-const VITE_API_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
-const API_BASE = VITE_API_URL ? `${VITE_API_URL}/api` : "/api";
+// URL Base Absoluta (Extraída del .env o fallback al túnel activo)
+// Ahora siempre incluimos /api en la base para simplificar los servicios.
+const RAW_URL = (import.meta.env.VITE_API_URL || 'https://pj01pdf1-3005.use2.devtunnels.ms').replace(/\/$/, '')
+const BASE_URL = RAW_URL.endsWith('/api') ? RAW_URL : `${RAW_URL}/api`
 
-// ─── Cliente central ─────────────────────────────────────────
-
-/**
- * @param {string}  endpoint  - Ruta relativa (ej: "/usuarios/login")
- * @param {string}  method    - Verbo HTTP
- * @param {object}  [body]    - Cuerpo de la petición
- * @param {boolean} [auth]    - Si true, adjunta el token JWT
- */
-async function request(endpoint, method = 'GET', body = null, auth = false) {
-  // Interceptor de REQUEST: agregar headers estándar
-  const headers = {
+const axiosInstance = axios.create({
+  baseURL: BASE_URL,
+  headers: {
     'Content-Type': 'application/json',
-    'X-Tunnel-Skip-AntiCsrf': 'true',
-    'X-Requested-With': 'XMLHttpRequest',
+    'X-Tunnel-Skip-Anti-Phishing-Page': 'true',
+    'Bypass-Tunnel-Reminder': 'true'
   }
+})
 
-  if (auth) {
-    const token = authStore.token.value
-    if (token) headers['Authorization'] = `Bearer ${token}`
+// Interceptor para inyectar Token en cada petición
+axiosInstance.interceptors.request.use(config => {
+  const authS = useAuthStore()
+  if (authS.token) {
+    config.headers['x-token'] = authS.token
   }
+  return config
+})
 
-  const config = { method, headers }
-  if (body) config.body = JSON.stringify(body)
-
-  // Iniciar indicador de carga
-  uiStore.startLoading()
-
-  try {
-    const fullUrl = `${API_BASE}${endpoint}`
-
-    // ─── MOCK LOGIC (Modo Frontend Exclusivo) ─────────────────
-    if (import.meta.env.DEV) {
-      console.log(`[MOCK HTTP] ${method} ${endpoint}`, body ?? '')
+// Interceptor de respuesta para Depuración Avanzada (Debug 400)
+axiosInstance.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response) {
+      console.group('%c 🔥 ERROR DEL BACKEND ', 'background: #ff4444; color: #fff; border-radius: 4px; padding: 2px;')
+      console.log('Status:', error.response.status)
+      console.log('Endpoint:', error.config.url)
+      console.log('Detalle:', error.response.data)
+      console.groupEnd()
     }
-
-    // Simulamos un retraso de red
-    await new Promise(resolve => setTimeout(resolve, 800))
-
-    // MOCK RESPONSES
-    if (endpoint === '/usuarios/login') {
-      return { 
-        token: 'mock-jwt-token-' + Date.now(), 
-        user: { 
-          id: 'mock-user-123', 
-          nombre: 'Viajero Astral', 
-          email: body.email, 
-          id_rol: 1, 
-          plan: 'Ninguno' 
-        } 
-      }
-    }
-
-    if (endpoint === '/usuarios/register') {
-      return { msg: 'Usuario registrado (MOCK)' }
-    }
-
-    // Default mock response
-    return { status: 'ok', message: 'Respuesta simulada', data: [] }
-
-  } catch (err) {
-    throw err
-  } finally {
-    uiStore.stopLoading()
+    return Promise.reject(error)
   }
+)
+
+// Métodos de conveniencia que devuelven data directamente
+export const http = {
+  get: (endpoint, auth = false) => axiosInstance.get(endpoint, { authRequired: auth }).then(r => r.data),
+  post: (endpoint, body, auth = false) => axiosInstance.post(endpoint, body, { authRequired: auth }).then(r => r.data),
+  put: (endpoint, body, auth = false) => axiosInstance.put(endpoint, body, { authRequired: auth }).then(r => r.data),
+  delete: (endpoint, auth = false) => axiosInstance.delete(endpoint, { authRequired: auth }).then(r => r.data),
 }
 
-// ─── Métodos de conveniencia ─────────────────────────────────
-export const httpClient = {
-  get: (endpoint, auth = false) => request(endpoint, 'GET', null, auth),
-  post: (endpoint, body, auth = false) => request(endpoint, 'POST', body, auth),
-  put: (endpoint, body, auth = false) => request(endpoint, 'PUT', body, auth),
-  delete: (endpoint, auth = false) => request(endpoint, 'DELETE', null, auth),
-}
-
-export default httpClient
+export const httpClient = http // Alias para compatibilidad con código existente
+export const httpClientUnificado = http 
+export default http

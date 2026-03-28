@@ -2,7 +2,9 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { usuariosService, pagosService } from '@/services/api'
-import { authStore } from '@/store/auth'
+import { useAuthStore } from '@/store/auth'
+
+const auth = useAuthStore()
 
 const router = useRouter()
 const users = ref([])
@@ -47,12 +49,35 @@ watch(planCosts, (newVal) => {
   localStorage.setItem('numerix_plan_costs', JSON.stringify(newVal))
 }, { deep: true })
 
-// Monthly Analytics Data
-const monthlyFlow = ref([
-  { month: 'Enero', users: 15, subs: 5 },
-  { month: 'Febrero', users: 28, subs: 12 },
-  { month: 'Marzo', users: 45, subs: 28 }
-])
+// Monthly Analytics Data (Computed)
+const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+
+const monthlyFlow = computed(() => {
+  const currentMonth = new Date().getMonth()
+  const stats = []
+
+  // Mostrar los últimos 4 meses (incluyendo el actual)
+  for (let i = 3; i >= 0; i--) {
+    let mIndex = currentMonth - i
+    if (mIndex < 0) mIndex += 12
+    const monthName = MONTH_NAMES[mIndex]
+
+    // Registros en este mes
+    const monthUsers = users.value.filter(u => {
+      const regDate = new Date(u.fecha_registro || u.createdAt)
+      return regDate.getMonth() === mIndex && regDate.getFullYear() === new Date().getFullYear()
+    }).length
+
+    // Suscripciones/Pagos en este mes
+    const monthSubs = payments.value.filter(p => {
+      const payDate = new Date(p.fecha_pago || p.createdAt)
+      return payDate.getMonth() === mIndex && payDate.getFullYear() === new Date().getFullYear()
+    }).length
+
+    stats.push({ month: monthName, users: monthUsers, subs: monthSubs })
+  }
+  return stats
+})
 
 
 
@@ -121,17 +146,20 @@ async function fetchData() {
     payments.value = paymentsData.length > 0 ? paymentsData : mockPayments
 
     if (usersData.length > 0) {
-      showToast('Sincronización Astral: Datos en Tiempo Real.', 'success')
+      showToast('Sincronización Astral Exitosa: Datos en Tiempo Real.', 'success')
+    } else {
+      showToast('Modo de Consulta: Usando registros archivados (Mock).', 'info')
     }
   } catch (err) {
     console.error('Error fetching admin data:', err)
+    showToast('Falla en la Sincronización: Verifica tu conexión al Núcleo.', 'error')
   } finally {
     loading.value = false
   }
 }
 
 onMounted(() => {
-  const user = authStore.currentUser.value
+  const user = auth.user
   const roleId = user?.id_rol || user?.role_id
   
   if (roleId !== 2) {
@@ -193,8 +221,8 @@ const filteredUsers = computed(() => {
   if (selectedMonth.value) {
     const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
     list = list.filter(u => {
-      const d = new Date(u.fecha_registro)
-      return monthNames[d.getMonth()] === selectedMonth.value
+      const d = new Date(u.fecha_registro || u.createdAt)
+      return MONTH_NAMES[d.getMonth()] === selectedMonth.value
     })
   }
   
@@ -354,11 +382,11 @@ const activeSubscribersCount = computed(() => {
                 <span class="stat-value">{{ activeSubscribersCount }}</span>
               </div>
             </div>
-            <div class="stat-card">
+             <div class="stat-card">
               <div class="stat-icon monetization">💰</div>
               <div class="stat-info">
                 <span class="stat-label">RECAUDACIÓN</span>
-                <span class="stat-value">${{ parseFloat(payments.reduce((acc, curr) => acc + (curr.monto || 0), 0)).toFixed(2) }}</span>
+                <span class="stat-value">${{ parseFloat(payments.reduce((acc, curr) => acc + (Number(curr.monto) || 0), 0)).toFixed(2) }}</span>
               </div>
             </div>
           </div>

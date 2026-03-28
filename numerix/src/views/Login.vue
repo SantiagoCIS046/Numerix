@@ -1,15 +1,18 @@
 <script setup>
 import { ref, reactive, computed } from "vue";
 import { useRouter } from "vue-router";
-import { authService, passwordService } from "../services/api.js";
+import { authService, passwordService } from "../services/api";
+import { useAuthStore } from "../store/auth";
+import { useNotificationStore } from '../store/notifications.js';
 import { useI18n } from "@/composables/useI18n";
-import { authStore } from "@/store/auth.js";
 import { validateEmail, firstError, required } from "@/utils/validators.js";
 import { httpClient } from "@/plugins/http.js";
 
 const { t } = useI18n();
 
 const router = useRouter();
+const auth = useAuthStore();
+const notifStore = useNotificationStore();
 const step = ref(1); // 1: Seleccionar Rol, 2: Auth
 const mode = ref("login"); // 'login' | 'register'
 const loading = ref(false);
@@ -17,6 +20,12 @@ const error = ref("");
 const success = ref("");
 const selectedRole = ref(null);
 const passwordVisible = ref(true);
+const today = new Date().toISOString().split('T')[0];
+
+const emailInput = ref(null);
+const passwordInput = ref(null);
+const nameInput = ref(null);
+const birthInput = ref(null);
 
 const bootstrapAlert = ref({ show: false, message: '', type: 'info' })
 
@@ -74,29 +83,66 @@ async function handleLogin() {
     required(loginForm.password, 'La contraseña'),
   )
   if (validationError) {
+    showAlert(validationError, 'danger');
     error.value = validationError;
+    
+    // Enfocar el campo específico basado en el error
+    if (validationError.toLowerCase().includes('email')) {
+      emailInput.value?.focus();
+    } else if (validationError.toLowerCase().includes('contraseña')) {
+      passwordInput.value?.focus();
+    }
+    
     return;
   }
 
   loading.value = true;
   try {
-    const data = await authService.login(loginForm.email, loginForm.password);
+    const res = await authService.login(loginForm.email, loginForm.password);
+    console.log("RESPUESTA BACKEND:", res);
 
-    // Manejar respuesta tanto si user es array como si es objeto
-    const userData = Array.isArray(data.user) ? data.user[0] : data.user;
+    const data = res;
+    // El backend devuelve el usuario en un array: user[0]
+    const userArray = data?.user || data?.usuario;
 
-    // Usar authStore en lugar de setItem directo
-    authStore.setSession(data.token, userData);
+    if (!userArray || (Array.isArray(userArray) && userArray.length === 0)) {
+      console.error("No hay usuario en la respuesta", data);
+      error.value = "Error de sincronización: No se encontró perfil de usuario.";
+      return;
+    }
 
-    // Redirigir según el rol (2 = Guía/Admin)
-    const roleId = userData.id_rol || userData.role_id;
-    if (roleId === 2) {
+    const user = Array.isArray(userArray) ? userArray[0] : userArray;
+    const rol = user.id_rol || user.role_id;
+
+    console.log("ROL DETECTADO:", rol);
+
+    // GUARDAR TOKEN + ROL (OBLIGATORIO)
+    if (data.token) {
+      localStorage.setItem("token", data.token);
+    }
+    if (rol) {
+      localStorage.setItem("rol", rol);
+    }
+    if (user.id || user._id) {
+      localStorage.setItem("user_id", user.id || user._id);
+    }
+    if (user.fecha_nacimiento) {
+      localStorage.setItem("user_birth_date", user.fecha_nacimiento);
+    }
+
+    // Sincronizar Pinia (espera el objeto usuario, no el array)
+    auth.setAuth({ token: data.token, usuario: user });
+
+    // REDIRECCIÓN (1: Admin en el snippet del usuario, adaptado a rutas del proyecto)
+    // Nota: El usuario pidió /admin, pero en este proyecto es /guia-dashboard
+    if (rol === 1 || rol === '1') {
       router.push("/guia-dashboard");
     } else {
       router.push("/alineacion");
     }
   } catch (e) {
-    error.value = e.message;
+    error.value = e.message || "Falla en la Sincronización Estelar.";
+    console.error("Login fatal error", e);
   } finally {
     loading.value = false;
   }
@@ -107,20 +153,77 @@ async function handleRegister() {
   success.value = "";
 
   const { nombre, email, password, fecha_nacimiento } = registerForm;
-  if (!nombre || !email || !password || !fecha_nacimiento) {
-    error.value = t('auth.alerts.fillFields');
+  
+  if (!nombre) {
+    showAlert('Por favor, ingresa tu nombre para el registro astral.', 'danger');
+    nameInput.value?.focus();
+    return;
+  }
+  if (!email) {
+    showAlert('El correo electrónico es esencial para sincronizar tu cuenta.', 'danger');
+    emailInput.value?.focus();
+    return;
+  }
+  const emailCheck = validateEmail(email);
+  if (!emailCheck.valid) {
+    showAlert(emailCheck.message, 'danger');
+    emailInput.value?.focus();
+    return;
+  }
+  if (!password) {
+    showAlert('Debes definir un sigilo (contraseña) de acceso.', 'danger');
+    passwordInput.value?.focus();
+    return;
+  }
+  if (password.length < 6) {
+    showAlert('El sigilo debe tener al menos 6 caracteres para ser seguro.', 'danger');
+    passwordInput.value?.focus();
+    return;
+  }
+  if (!fecha_nacimiento) {
+    showAlert('La fecha de nacimiento es requerida para calcular tu carta.', 'danger');
+    birthInput.value?.focus();
+    return;
+  }
+  if (new Date(fecha_nacimiento) > new Date()) {
+    showAlert('Tu fecha de nacimiento no puede ser en el futuro.', 'danger');
+    birthInput.value?.focus();
+    return;
+  }
+  if (!selectedRole.value && !registerForm.id_rol) {
+    showAlert('Por favor, selecciona tu esencia (rol) antes de trascender.', 'danger');
     return;
   }
 
   loading.value = true;
   try {
-    // El backend espera id_rol según la lógica de la DB
-    await authService.register(nombre, email, password, fecha_nacimiento, selectedRole.value);
+    const res = await authService.register(nombre, email, password, fecha_nacimiento, selectedRole.value);
+    
+    // Si el backend devuelve los datos del usuario recién creado
+    const newUser = res?.user || res?.usuario;
+    const userObj = Array.isArray(newUser) ? newUser[0] : newUser;
+    const userId = userObj?.id || userObj?._id;
+
+    if (userId) {
+      localStorage.setItem("user_id", userId);
+      console.log("ID DE USUARIO REGISTRADO:", userId);
+    }
+    
+    // Guardar fecha de nacimiento para pre-llenar Alineación más adelante
+    localStorage.setItem("user_birth_date", fecha_nacimiento);
+
+    notifStore.addNotification({
+      title: 'BIENVENIDO AL COSMOS',
+      desc: `Hola ${nombre}, tu viaje estelar en Numerix ha comenzado. ¡Explora tu destino!`,
+      icon: '✨',
+      type: 'success'
+    });
+
     success.value = t('auth.alerts.success');
     switchMode("login");
     loginForm.email = email;
   } catch (e) {
-    error.value = e.message;
+    error.value = e.message || "Error en el Rito de Iniciación (Registro).";
   } finally {
     loading.value = false;
   }
@@ -201,11 +304,12 @@ async function handleEtherLogin() {
   etherLoading.value = true
   error.value = ''
   try {
-    const data = await httpClient.post('/usuarios/ether-login', {})
-    authStore.setSession(data.token, data.user[0])
+    // Usando el nuevo api (axios) para consistencia
+    const res = await api.post('/usuarios/ether-login', {})
+    auth.setAuth(res)
     router.push('/alineacion')
   } catch (err) {
-    error.value = err.message || 'Login Éter no disponible. Intenta con email y contraseña.'
+    error.value = err.response?.data?.msg || err.message || 'Login Éter no disponible. Intenta con email y contraseña.'
   } finally {
     etherLoading.value = false
   }
@@ -290,6 +394,7 @@ async function handleEtherLogin() {
           <label>{{ t('auth.fields.identityLabel') }}</label>
           <div class="input-wrapper">
             <input
+              ref="emailInput"
               v-model="loginForm.email"
               type="email"
               :placeholder="t('auth.fields.identityPlaceholder')"
@@ -302,6 +407,7 @@ async function handleEtherLogin() {
           <label>{{ t('auth.fields.sigilLabel') }}</label>
           <div class="input-wrapper">
             <input
+              ref="passwordInput"
               v-model="loginForm.password"
               :type="passwordVisible ? 'text' : 'password'"
               :placeholder="t('auth.fields.sigilPlaceholder')"
@@ -384,6 +490,7 @@ async function handleEtherLogin() {
         <div class="field">
           <label>{{ t('auth.fields.nameLabel') }}</label>
           <input
+            ref="nameInput"
             v-model="registerForm.nombre"
             type="text"
             :placeholder="t('auth.fields.namePlaceholder')"
@@ -449,7 +556,7 @@ async function handleEtherLogin() {
         </div>
         <div class="field">
           <label>{{ t('auth.fields.dateLabel') }}</label>
-          <input v-model="registerForm.fecha_nacimiento" type="date" />
+          <input ref="birthInput" v-model="registerForm.fecha_nacimiento" type="date" :max="today" />
         </div>
 
         <!-- Role Select within Register (if not selected) -->

@@ -4,6 +4,8 @@ import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import SistemaSolar from '@/components/SistemaSolar.vue'
 import AnimatedList from '@/components/AnimatedList.vue'
+import CosmicNotifications from '@/components/CosmicNotifications.vue'
+import { useNotificationStore } from '@/store/notifications'
 
 const { t } = useI18n()
 
@@ -22,15 +24,18 @@ const user = computed(() => {
   }
 })
 
-import { authStore } from '@/store/auth.js'
+import { useAuthStore } from '@/store/auth.js'
+
+const auth = useAuthStore()
+const notifStore = useNotificationStore()
 
 const menuItems = ref([
   { icon: '🪄', label: t('nav.home').toUpperCase(), route: '/home' },
   { icon: '✨', label: t('nav.predictions').toUpperCase(), route: '/lecturas' },
-  { icon: '⏳', label: t('nav.history').toUpperCase(), route: '/historia' },
-  { icon: '🌍', label: 'COMUNIDAD' },
+  { icon: '⏳', label: t('nav.history').toUpperCase(), route: '/historia', isPremium: true },
+  { icon: '🌍', label: 'COMUNIDAD', isPremium: true },
   { icon: '✨', label: t('alignment.title'), route: '/alineacion' },
-  { icon: '🎯', label: 'REVELACIÓN', route: '/revelacion' },
+  { icon: '🎯', label: 'REVELACIÓN', route: '/revelacion', isPremium: true },
   { icon: '⚙️', label: t('nav.settings').toUpperCase(), route: '/configuracion' },
 ])
 
@@ -112,7 +117,8 @@ const modules = ref([
     ...pick(compatPool),
     action: 'VER_SINCRO',
     delay: '0.8s',
-    id: 'compat'
+    id: 'compat',
+    isPremium: true
   },
 ])
 
@@ -131,7 +137,7 @@ function showAlert(message, type = 'info') {
 }
 
 function handleNavClick(item) {
-  showNotifications.value = false // Close notifications dropdown
+  notifStore.toggleDropdown(false) // Close notifications dropdown
   if (item.route) {
     router.push({ path: item.route, state: { fromHome: item.route === '/alineacion' } })
   } else if (item.label) {
@@ -156,8 +162,7 @@ const pathLabels = {
 }
 
 function logout() {
-  localStorage.removeItem('token')
-  localStorage.removeItem('user')
+  auth.logout()
   localStorage.removeItem('alignmentProfile')
   localStorage.removeItem('userSubscription')
   router.push('/auth')
@@ -168,7 +173,7 @@ const now = ref(new Date())
 let clockInterval = null
 onMounted(() => {
   // Add Admin Dashboard if user is Guía Cósmico (Role ID 2)
-  const userObj = authStore.currentUser.value
+  const userObj = auth.user
   const roleId = userObj?.id_rol || userObj?.role_id
   
   if (roleId === 2) {
@@ -220,51 +225,9 @@ const fullSidebarItems = computed(() => [
   { id: 'side-footer', type: 'footer' }
 ])
 
-// Notification System
-const showNotifications = ref(false)
-const notifications = ref([
-  {
-    id: 1,
-    title: 'PAGO PROCESADO',
-    desc: 'Tu suscripción Premium "ALINEACIÓN TOTAL" está activa. ✨',
-    time: 'Hace 2 min',
-    unread: true,
-    icon: '💳',
-    type: 'payment'
-  },
-  {
-    id: 2,
-    title: 'BIENVENIDO AL NODO',
-    desc: '¡Explora tus nuevas lecturas astrales personalizadas! 🧭',
-    time: 'Hace 1 hora',
-    unread: true,
-    icon: '✨',
-    type: 'system'
-  },
-  {
-    id: 3,
-    title: 'MÓDULO DESBLOQUEADO',
-    desc: 'Geometría Sagrada Nivel 2 ya está disponible. ▲',
-    time: 'Hace 3 horas',
-    unread: false,
-    icon: '🪐',
-    type: 'update'
-  }
-])
-
-const unreadCount = computed(() => notifications.value.filter(n => n.unread).length)
-
+// Notification System Logic now handled by CosmicNotifications component
 const toggleNotifications = () => {
-  showNotifications.value = !showNotifications.value
-}
-
-const markAsRead = (id) => {
-  const notif = notifications.value.find(n => n.id === id)
-  if (notif) notif.unread = false
-}
-
-const markAllRead = () => {
-  notifications.value.forEach(n => n.unread = false)
+  notifStore.toggleDropdown()
 }
 
 // Astral items
@@ -349,6 +312,7 @@ const activeAstral = ref(null)
           <div v-else-if="item.type === 'nav'" :class="['nav-item-animated', { active: item.originalIndex === activeIndex }]">
             <span class="nav-icon">{{ item.icon }}</span>
             <span class="nav-label">{{ item.label }}</span>
+            <span v-if="item.isPremium && !auth.user?.estado" class="nav-lock">🔒</span>
           </div>
 
           <!-- SIDEBAR FOOTER -->
@@ -389,38 +353,7 @@ const activeAstral = ref(null)
           </div>
         </div>
         <div class="header-actions">
-          <div class="notif-wrapper">
-            <button class="btn-notification" @click="toggleNotifications">
-              <span class="notif-icon">🔔</span>
-              <div v-if="unreadCount > 0" class="notif-badge">{{ unreadCount }}</div>
-            </button>
-
-            <!-- Notifications Dropdown -->
-            <Transition name="fade-slide">
-              <div v-if="showNotifications" class="notifications-dropdown">
-                <div class="notif-header">
-                  <h3>{{ t('nav.notifications') }}</h3>
-                  <span class="notif-mark-all" @click="markAllRead">{{ t('nav.markAll') }}</span>
-                </div>
-                <div class="notif-list">
-                  <div 
-                    v-for="notif in notifications" 
-                    :key="notif.id" 
-                    :class="['notif-item', { unread: notif.unread }]"
-                    @click="markAsRead(notif.id)"
-                  >
-                    <div class="notif-item-icon">{{ notif.icon }}</div>
-                    <div class="notif-item-content">
-                      <p class="notif-item-title">{{ notif.title }}</p>
-                      <p class="notif-item-desc">{{ notif.desc }}</p>
-                      <span class="notif-item-time">{{ notif.time }}</span>
-                    </div>
-                    <div v-if="notif.unread" class="unread-dot"></div>
-                  </div>
-                </div>
-              </div>
-            </Transition>
-          </div>
+          <CosmicNotifications />
         </div>
       </header>
 
@@ -467,10 +400,14 @@ const activeAstral = ref(null)
               >
                 <div class="module-icon-container">
                   <span class="module-icon">{{ mod.icon }}</span>
+                  <div v-if="mod.isPremium && !auth.isSubscribed" class="premium-badge-mini">PRO</div>
                 </div>
                 <h5 class="module-title">{{ mod.title }}</h5>
                 <p class="module-desc">{{ mod.desc }}</p>
-                <span class="module-action" @click="openModal(mod)">{{ mod.action }}</span>
+                <div class="module-footer">
+                  <span class="module-action" @click="openModal(mod)">{{ mod.action }}</span>
+                  <span v-if="mod.isPremium && !auth.isSubscribed" class="lock-indicator">🔒</span>
+                </div>
               </div>
             </div>
           </div>
@@ -1090,151 +1027,42 @@ const activeAstral = ref(null)
   width: 45px;
   height: 45px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  color: #fff;
-  cursor: pointer;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
 }
 
-.notif-wrapper {
-  position: relative;
+/* PREMIUM MARKERS */
+.nav-lock {
+  margin-left: auto;
+  font-size: 0.7rem;
+  opacity: 0.5;
 }
 
-.notif-badge {
+.premium-badge-mini {
   position: absolute;
-  top: -2px;
-  right: -2px;
+  top: -5px;
+  right: -5px;
   background: #c9a96e;
   color: #0f0c29;
-  font-size: 0.6rem;
+  font-size: 0.5rem;
   font-weight: 800;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid #0f0c29;
-  box-shadow: 0 0 10px rgba(201, 169, 110, 0.5);
+  padding: 2px 6px;
+  border-radius: 4px;
+  box-shadow: 0 0 10px rgba(201, 169, 110, 0.3);
 }
 
-.notifications-dropdown {
-  position: absolute;
-  top: calc(100% + 1rem);
-  right: 0;
-  width: 320px;
-  background: rgba(15, 12, 41, 0.95);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(201, 169, 110, 0.2);
-  border-radius: 20px;
-  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.6);
-  z-index: 1000;
-  overflow: hidden;
-}
-
-.notif-header {
-  padding: 1.2rem 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+.module-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-top: auto;
 }
 
-.notif-header h3 {
-  font-size: 0.75rem;
-  font-weight: 800;
-  letter-spacing: 2px;
-  color: #c9a96e;
-  margin: 0;
+.lock-indicator {
+  font-size: 0.8rem;
+  opacity: 0.5;
 }
 
-.notif-mark-all {
-  font-size: 0.65rem;
-  color: rgba(255, 255, 255, 0.4);
-  cursor: pointer;
-  transition: color 0.3s;
-}
-
-.notif-mark-all:hover {
-  color: #fff;
-}
-
-.notif-list {
-  max-height: 400px;
-  overflow-y: auto;
-}
-
-.notif-item {
-  display: flex;
-  gap: 1rem;
-  padding: 1.2rem 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-  cursor: pointer;
-  transition: all 0.3s;
-  position: relative;
-}
-
-.notif-item:hover {
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.notif-item.unread {
-  background: rgba(201, 169, 110, 0.02);
-}
-
-.notif-item-icon {
-  width: 40px;
-  height: 40px;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
-  flex-shrink: 0;
-}
-
-.notif-item-content {
-  flex: 1;
-}
-
-.notif-item-title {
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: #fff;
-  margin: 0 0 0.2rem;
-  letter-spacing: 0.5px;
-}
-
-.notif-item-desc {
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.5);
-  line-height: 1.4;
-  margin: 0 0 0.4rem;
-}
-
-.notif-item-time {
-  font-size: 0.6rem;
-  color: rgba(255, 255, 255, 0.3);
-  text-transform: uppercase;
-}
-
-.unread-dot {
-  width: 8px;
-  height: 8px;
-  background: #c9a96e;
-  border-radius: 50%;
-  position: absolute;
-  top: 1.5rem;
-  right: 1.2rem;
-  box-shadow: 0 0 10px rgba(201, 169, 110, 0.6);
-}
-
-/* Transitions */
+/* Notifications handled by CosmicNotifications component */
 .fade-slide-enter-active,
 .fade-slide-leave-active {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);

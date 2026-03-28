@@ -2,6 +2,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
+import { getPagos } from "../services/data";
+import { useAuthStore } from "../store/auth";
 
 const { t } = useI18n()
 
@@ -9,9 +11,9 @@ const router = useRouter()
 
 // Get user data from localStorage consistently with PagPrincipal.vue
 const user = computed(() => {
-  const stored = localStorage.getItem('user')
+  const store = useAuthStore();
+  const userData = store.user;
   const alignment = localStorage.getItem('alignmentProfile')
-  const userData = stored ? JSON.parse(stored) : null
   const alignmentData = alignment ? JSON.parse(alignment) : null
   
   const nombre = alignmentData?.fullName || userData?.nombre || userData?.name || 'VIAJERO ASTRAL'
@@ -22,17 +24,25 @@ const user = computed(() => {
   return {
     name: nombre,
     rank: rank,
-    avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(nombre)} background=6366f1&color=fff`
+    avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(nombre)}&background=6366f1&color=fff`
   }
 })
 
 // Transactions data - Fetched from cosmic_history in localStorage
 const transactions = ref([])
 
-onMounted(() => {
-  const storedHistory = localStorage.getItem('cosmic_history')
-  if (storedHistory) {
-    transactions.value = JSON.parse(storedHistory)
+onMounted(async () => {
+  try {
+    const data = await getPagos();
+    // Ajustar según la respuesta del backend (puede ser data.pagos o data)
+    transactions.value = data.pagos || data;
+  } catch (err) {
+    console.error("Error al cargar pagos:", err);
+    // Fallback al localStorage si falla la red (opcional)
+    const storedHistory = localStorage.getItem('cosmic_history')
+    if (storedHistory) {
+      transactions.value = JSON.parse(storedHistory)
+    }
   }
 })
 

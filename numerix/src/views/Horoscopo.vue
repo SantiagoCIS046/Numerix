@@ -4,7 +4,9 @@ import { useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import Galaxy from '../components/Galaxy.vue'
 import SubscriptionOverlay from '../components/SubscriptionOverlay.vue'
-import { isSubscribed } from '@/store/auth.js'
+import { useAuthStore } from '@/store/auth.js'
+
+const auth = useAuthStore()
 
 
 const { t } = useI18n()
@@ -109,7 +111,7 @@ function showAlert(message, type = 'info') {
       class="galaxy-bg"
     />
 
-    <SubscriptionOverlay v-if="!isSubscribed" />
+    <SubscriptionOverlay v-if="!auth.isSubscribed" />
 
     <!-- Bootstrap Alert -->
     <div 

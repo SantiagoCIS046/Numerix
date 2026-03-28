@@ -18,18 +18,13 @@ function showAlert(message, type = 'info') {
 }
 
 const plans = computed(() => {
-  const storedCosts = JSON.parse(localStorage.getItem('numerix_plan_costs')) || {
-    lunar: 12,
-    planetario: 34,
-    supernova: 88
-  }
-
   return [
     {
       id: 'lunar',
-      name: t('subscriptions.plans.lunar.name'),
+      _id: '65f1a2b3c4d5e6f7890abc12', // 🆔 ObjectID real (o ejemplo)
+      name: 'NIVEL LUNAR',
       code: t('subscriptions.plans.lunar.code'),
-      price: `$${storedCosts.lunar}`,
+      price: '$12',
       period: '/LUNA',
       description: t('subscriptions.plans.lunar.description'),
       features: t('subscriptions.plans.lunar.features'),
@@ -38,9 +33,10 @@ const plans = computed(() => {
     },
     {
       id: 'planetario',
-      name: t('subscriptions.plans.planetario.name'),
+      _id: '65f1a2b3c4d5e6f7890abc23', // 🆔 Placeholder
+      name: 'NIVEL PLANETARIO',
       code: t('subscriptions.plans.planetario.code'),
-      price: `$${storedCosts.planetario}`,
+      price: '$34',
       period: '/LUNA',
       description: t('subscriptions.plans.planetario.description'),
       features: t('subscriptions.plans.planetario.features'),
@@ -50,9 +46,10 @@ const plans = computed(() => {
     },
     {
       id: 'supernova',
-      name: t('subscriptions.plans.supernova.name'),
+      _id: '65f1a2b3c4d5e6f7890abc34', // 🆔 Placeholder
+      name: 'NIVEL SUPERNOVA',
       code: t('subscriptions.plans.supernova.code'),
-      price: `$${storedCosts.supernova}`,
+      price: '$88',
       period: '/LUNA',
       description: t('subscriptions.plans.supernova.description'),
       features: t('subscriptions.plans.supernova.features'),

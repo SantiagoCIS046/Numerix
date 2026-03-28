@@ -4,7 +4,9 @@ import { useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import LightPillar from '@/components/LightPillar.vue'
 import SubscriptionOverlay from '../components/SubscriptionOverlay.vue'
-import { isSubscribed } from '@/store/auth.js'
+import { useAuthStore } from '@/store/auth.js'
+
+const auth = useAuthStore()
 
 
 const { t } = useI18n()
@@ -141,7 +143,7 @@ function showAlert(message, type = 'info') {
 <template>
   <div class="revelation-container">
     <div class="stars-bg"></div>
-    <SubscriptionOverlay v-if="!isSubscribed" />
+    <SubscriptionOverlay v-if="!auth.isSubscribed" />
     <div class="dynamic-stars" :style="{ opacity: starsIntensity }"></div>
     <div class="background-effects">
       <LightPillar

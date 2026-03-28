@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
-import { hasValidToken, currentUser } from "@/store/auth.js";
+import { useAuthStore } from "../store/auth";
 import AuthView from "../views/Login.vue";
 import PagPrincipal from "../views/PagPrincipal.vue";
 import Alineacion from "../views/Alineacion.vue";
@@ -30,41 +30,49 @@ const routes = [
     path: "/home",
     name: "Home",
     component: PagPrincipal,
+    meta: { requiresAuth: true }
   },
   {
     path: "/alineacion",
     name: "Alineacion",
     component: Alineacion,
+    meta: { requiresAuth: true }
   },
   {
     path: "/lecturas",
     name: "Lecturas",
     component: Lecturas,
+    meta: { requiresAuth: true }
   },
   {
     path: "/carta-natal",
     name: "CartaNatal",
     component: CartaNatal,
+    meta: { requiresAuth: true, requiresSubscription: true }
   },
   {
     path: "/compatibilidad",
     name: "Compatibilidad",
     component: Compatibilidad,
+    meta: { requiresAuth: true, requiresSubscription: true }
   },
   {
     path: "/horoscopo",
     name: "Horoscopo",
     component: Horoscopo,
+    meta: { requiresAuth: true, requiresSubscription: true }
   },
   {
     path: "/revelacion",
     name: "revelacion",
     component: Revelacion,
+    meta: { requiresAuth: true, requiresSubscription: true }
   },
   {
     path: "/informe-personal",
     name: "FullReport",
     component: FullReport,
+    meta: { requiresAuth: true, requiresSubscription: true }
   },
   {
     path: "/suscripcion",
@@ -75,6 +83,7 @@ const routes = [
     path: "/historia",
     name: "HistoriaEstelar",
     component: HistoriaEstelar,
+    meta: { requiresAuth: true, requiresSubscription: true }
   },
   {
     path: "/pagos",
@@ -104,11 +113,13 @@ const routes = [
     path: "/historial-pagos",
     name: "HistorialPagos",
     component: HistorialPagos,
+    meta: { requiresAuth: true }
   },
   {
     path: "/configuracion",
     name: "Configuracion",
     component: () => import("../views/ConfiguracionAstral.vue"),
+    meta: { requiresAuth: true }
   },
   {
     path: "/guia-dashboard",
@@ -124,29 +135,31 @@ const router = createRouter({
 });
 
 
-// ─── Navigation Guard ────────────────────────────────────────
+// ─── Navigation Guard ──────────────────────────────────────────
 router.beforeEach((to) => {
-  const isPublic = to.meta?.public === true
-  const tokenExists = hasValidToken()
-  const user = currentUser.value
-  const roleId = user?.id_rol || user?.role_id
-  
-  // 1. Acceso a rutas protegidas sin token
-  if (!isPublic && !tokenExists) {
-    return { name: 'Auth' }
+  const auth = useAuthStore();
+
+  // 1. Proteger rutas que requieren autenticación
+  if (to.meta.requiresAuth && !auth.token) {
+    return "/auth"; 
   }
 
-  // 2. Acceso a rutas de Admin (Guía)
-  if (to.meta?.adminOnly) {
-    // Si no hay usuario cargado o no es el rol 2 (Guía Cósmico)
-    if (!user || roleId !== 2) {
-      console.warn('Acceso no autorizado detectado a ruta administrativa.')
-      return { name: 'Home' }
+  // 2. Proteger rutas que requieren suscripción (Modelo Freemium)
+  if (to.meta.requiresSubscription && !auth.isSubscribed) {
+    console.warn('Acceso restringido: Se requiere suscripción para esta ruta.');
+    return "/suscripcion"; 
+  }
+
+  // 3. Acceso a rutas de Admin (Guía)
+  if (to.meta.adminOnly) {
+    const user = auth.user;
+    const roleId = user?.id_rol || user?.role_id || user?.role;
+    // En este sistema, Admin = 2 (Guía Cósmico)
+    if (!user || (roleId != 2 && roleId !== 'admin')) {
+      console.warn('Acceso no autorizado detectado a ruta administrativa.');
+      return "/home"; 
     }
   }
-
-  // Permitir la navegación si nada de lo anterior se cumple
-  return true
-})
+});
 
 export default router;

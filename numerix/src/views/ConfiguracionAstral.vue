@@ -2,7 +2,10 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
-import { authStore } from '@/store/auth.js'
+import { useAuthStore } from '@/store/auth.js'
+import CosmicNotifications from '@/components/CosmicNotifications.vue'
+
+const auth = useAuthStore()
 import { httpClient } from '@/plugins/http.js'
 import { validatePassword, validatePasswordMatch } from '@/utils/validators.js'
 
@@ -95,8 +98,7 @@ const selectComp = (opt) => {
   showCompDropdown.value = false
 }
 
-// Notifications Dropdown (Re-using logic from Home)
-const unreadNotifs = ref(2)
+// Notifications now handled by global store via CosmicNotifications component
 
 // Navigation
 const menuItems = ref([
@@ -112,7 +114,7 @@ const navigateTo = (route) => {
 }
 
 const logout = () => {
-  authStore.clearSession()
+  auth.logout()
   router.push('/auth')
 }
 
@@ -197,7 +199,7 @@ async function changePassword() {
 
   pwLoading.value = true
   try {
-    const userData = authStore.currentUser.value
+    const userData = auth.user
     const userEmail = userData?.email || ''
 
     // El backend usa el flujo: email + code + newPassword
@@ -254,11 +256,8 @@ async function changePassword() {
             <h1>{{ t('settings.title') }} <span>{{ t('settings.subtitle') }}</span></h1>
           </div>
         </div>
-        <div class="header-controls">
-          <button class="icon-btn" @click="alert('Gestor de notificaciones activo')">
-            <span class="icon">🔔</span>
-            <div v-if="unreadNotifs > 0" class="notif-dot-mini"></div>
-          </button>
+        <div class="header-actions">
+          <CosmicNotifications />
           <button class="icon-btn profile-btn" @click="navigateTo('/home')">
             <img :src="user.avatar" alt="P" />
           </button>

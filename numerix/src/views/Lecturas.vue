@@ -2,11 +2,12 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
-import { lecturasService } from '../services/api.js'
-import { authStore } from '@/store/auth.js'
+import { getLecturas } from "../services/data";
+import { useAuthStore } from "../store/auth";
 import Galaxy from '../components/Galaxy.vue'
 import SubscriptionOverlay from '../components/SubscriptionOverlay.vue'
-import { isSubscribed } from '@/store/auth.js'
+
+const auth = useAuthStore()
 
 const { t } = useI18n()
 
@@ -77,10 +78,10 @@ const advisoryChecklist = computed(() => [
 ])
 
 async function fetchReadings() {
-  const store = authStore()
-  const userId = store.currentUser?.id
+  const store = useAuthStore()
+  const userId = store.user?.id
 
-  if (!userId) {
+  if (!store.token) {
     loading.value = false
     error.value = 'Debes iniciar sesión para ver tus lecturas personalizadas.'
     return
@@ -88,10 +89,13 @@ async function fetchReadings() {
 
   loading.value = true
   try {
-    const data = await lecturasService.getAllByUser(userId)
-    if (data && data.length > 0) {
-      readings.value = data
-      const apiReading = data[0]
+    const data = await getLecturas()
+    // El backend puede devolver { ok: true, lecturas: [...] } o directamente el array
+    const readingList = data.lecturas || data
+    
+    if (readingList && readingList.length > 0) {
+      readings.value = readingList
+      const apiReading = readingList[0]
       currentReading.value = {
         numero: apiReading.numero || defaultReading.value.numero,
         titulo: apiReading.titulo || defaultReading.value.titulo,
@@ -105,6 +109,7 @@ async function fetchReadings() {
         influencia_solar: apiReading.influencia_solar || defaultReading.value.influencia_solar
       }
     }
+    console.log("Lecturas cargadas:", data);
   } catch (err) {
     console.error('Error fetching readings:', err)
     error.value = 'No se pudo cargar la información del servidor.'
@@ -145,7 +150,7 @@ function showAlert(message, type = 'info') {
       class="galaxy-bg"
     />
 
-    <SubscriptionOverlay v-if="!isSubscribed" />
+    <SubscriptionOverlay v-if="!auth.isSubscribed && readings.length > 0" />
 
     <!-- Bootstrap Alert -->
     <div 
@@ -209,9 +214,14 @@ function showAlert(message, type = 'info') {
             <div class="number-rings"></div>
           </div>
           <h2 class="hero-title">{{ currentReading.titulo }}</h2>
-          <div class="sync-actions">
+          <div class="sync-actions" v-if="auth.isSubscribed || readings.length === 0">
             <button class="sync-cosmic-btn" @click="handleSync">
               <span class="sync-icon">🔄</span> SINCRONIZAR CON EL COSMOS
+            </button>
+          </div>
+          <div class="sync-actions locked" v-else @click="router.push('/suscripcion')">
+            <button class="sync-cosmic-btn locked">
+              <span class="sync-icon">🔒</span> DESBLOQUEAR MÁS LECTURAS
             </button>
           </div>
           <p class="hero-description">{{ currentReading.descripcion }}</p>
@@ -313,8 +323,12 @@ function showAlert(message, type = 'info') {
 
       <!-- CTA -->
       <div class="cta-container">
-        <button class="btn-full-report" @click="generateReport">
-          {{ t('lectures.cta') }} <span class="btn-wand">🪄</span>
+        <button 
+          :class="['btn-full-report', { 'locked-cta': !auth.isSubscribed }]" 
+          @click="auth.isSubscribed ? generateReport() : router.push('/suscripcion')"
+        >
+          {{ t('lectures.cta') }} 
+          <span class="btn-wand">{{ auth.isSubscribed ? '🪄' : '🔒' }}</span>
         </button>
       </div>
     </main>

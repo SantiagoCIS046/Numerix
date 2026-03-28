@@ -1,154 +1,3 @@
-<script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useI18n } from '@/composables/useI18n'
-
-const { t } = useI18n()
-
-const router = useRouter()
-
-// --- DATA ---
-const user = computed(() => {
-  const stored = localStorage.getItem('user')
-  const alignment = localStorage.getItem('alignmentProfile')
-  const subscription = localStorage.getItem('userSubscription')
-  
-  const userData = stored ? JSON.parse(stored) : null
-  const alignmentData = alignment ? JSON.parse(alignment) : null
-  const subData = subscription ? JSON.parse(subscription) : null
-  
-  return {
-    nombre: alignmentData?.fullName || userData?.nombre || userData?.name || 'VIAJERO ASTRAL',
-    plan: subData?.name || t('history.stats.planLunar'),
-    startDate: subData?.date ? new Date(subData.date).toLocaleDateString() : '03 ENE, 2024',
-    rawDate: subData?.date || new Date().toISOString(),
-    alignmentStatus: alignmentData ? t('history.stats.complete') : t('history.stats.pending')
-  }
-})
-
-const isNewUser = computed(() => {
-  const start = new Date(user.value.rawDate)
-  const today = new Date()
-  return start.toDateString() === today.toDateString()
-})
-
-const timelineEvents = computed(() => [
-  {
-    id: 1,
-    date: '14 NOV, 2024',
-    type: t('history.events.0.type'),
-    title: t('history.events.0.title'),
-    labels: t('history.events.0.labels'),
-    desc: t('history.events.0.desc'),
-    active: true
-  },
-  {
-    id: 2,
-    date: '28 OCT, 2024',
-    type: t('history.events.1.type'),
-    title: t('history.events.1.title'),
-    labels: t('history.events.1.labels'),
-    desc: t('history.events.1.desc'),
-    active: false
-  },
-  {
-    id: 3,
-    date: '12 SEP, 2024',
-    type: t('history.events.2.type'),
-    title: t('history.events.2.title'),
-    labels: t('history.events.2.labels'),
-    desc: t('history.events.2.desc'),
-    active: false
-  },
-  {
-    id: 4,
-    date: '05 AGO, 2024',
-    type: t('history.events.3.type'),
-    title: t('history.events.3.title'),
-    labels: t('history.events.3.labels'),
-    desc: t('history.events.3.desc'),
-    active: false
-  }
-])
-
-const activeFilter = ref(t('history.filters.all'))
-const filters = computed(() => [t('history.filters.all'), t('history.filters.transits'), t('history.filters.numerology'), t('history.filters.maps')])
-const zoomScale = ref(1)
-const isDropdownOpen = ref(false)
-const isEraOpen = ref(false)
-
-const activeEra = ref(t('history.filters.sun30'))
-const eraOptions = computed(() => [t('history.filters.sun7'), t('history.filters.sun30'), t('history.filters.sun90'), t('history.filters.allTime')])
-
-function toggleDropdown() {
-  isDropdownOpen.value = !isDropdownOpen.value
-  if (isDropdownOpen.value) isEraOpen.value = false
-}
-
-function toggleEra() {
-  isEraOpen.value = !isEraOpen.value
-  if (isEraOpen.value) isDropdownOpen.value = false
-}
-
-function setFilter(f) {
-  activeFilter.value = f
-  isDropdownOpen.value = false
-}
-
-function setEra(e) {
-  activeEra.value = e
-  isEraOpen.value = false
-}
-
-const filteredEvents = computed(() => {
-  let events = timelineEvents.value
-
-  // Alignment Filter
-  if (activeFilter.value !== t('history.filters.all')) {
-    const filterMap = {
-      [t('history.filters.transits')]: t('history.events.0.type'),
-      [t('history.filters.numerology')]: t('history.events.1.type'),
-      [t('history.filters.maps')]: t('history.events.2.type')
-    }
-    const targetType = filterMap[activeFilter.value]
-    events = events.filter(ev => ev.type === targetType)
-  }
-
-  // Era Filter
-  if (activeEra.value === t('history.filters.sun7')) {
-    return events.slice(0, 1)
-  } else if (activeEra.value === t('history.filters.sun30')) {
-    return events.slice(0, 3)
-  } else if (activeEra.value === t('history.filters.sun90')) {
-    return events.slice(0, 4)
-  }
-
-  return events
-})
-
-function adjustZoom(delta) {
-  const newScale = zoomScale.value + delta
-  if (newScale >= 0.5 && newScale <= 2) {
-    zoomScale.value = newScale
-  }
-}
-
-function navigateTo(path) {
-  router.push(path)
-}
-
-function goBack() {
-  router.back()
-}
-
-function scrollToTimeline() {
-  const el = document.querySelector('.timeline-container') || document.querySelector('.empty-astral-state')
-  if (el) {
-    el.scrollIntoView({ behavior: 'smooth' })
-  }
-}
-</script>
-
 <template>
   <div class="history-page">
     <div class="cosmic-bg"></div>
@@ -297,6 +146,176 @@ function scrollToTimeline() {
     </footer>
   </div>
 </template>
+
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useI18n } from '@/composables/useI18n'
+import { getMovimientos } from "../services/data";
+import { useAuthStore } from "../store/auth";
+
+const { t } = useI18n()
+
+const router = useRouter()
+
+// --- DATA ---
+const user = computed(() => {
+  const store = useAuthStore();
+  const userData = store.user;
+  const alignment = localStorage.getItem('alignmentProfile')
+  const subscription = localStorage.getItem('userSubscription')
+  
+  const alignmentData = alignment ? JSON.parse(alignment) : null
+  const subData = subscription ? JSON.parse(subscription) : null
+  
+  return {
+    nombre: alignmentData?.fullName || userData?.nombre || userData?.name || 'VIAJERO ASTRAL',
+    plan: subData?.name || t('history.stats.planLunar'),
+    startDate: subData?.date ? new Date(subData.date).toLocaleDateString() : '03 ENE, 2024',
+    rawDate: subData?.date || new Date().toISOString(),
+    alignmentStatus: alignmentData ? t('history.stats.complete') : t('history.stats.pending')
+  }
+})
+
+const isNewUser = computed(() => {
+  const start = new Date(user.value.rawDate)
+  const today = new Date()
+  return (today - start) < (7 * 24 * 60 * 60 * 1000)
+})
+
+const movements = ref([])
+
+onMounted(async () => {
+  try {
+    const data = await getMovimientos();
+    movements.value = data.movimientos || data;
+  } catch (err) {
+    console.error("Error al cargar movimientos:", err);
+  }
+})
+
+const timelineEvents = computed(() => {
+  if (movements.value.length > 0) {
+    return movements.value;
+  }
+  // Fallback a eventos estáticos si no hay datos en el backend
+  return [
+  {
+    id: 1,
+    date: '14 NOV, 2024',
+    type: t('history.events.0.type'),
+    title: t('history.events.0.title'),
+    labels: t('history.events.0.labels'),
+    desc: t('history.events.0.desc'),
+    active: true
+  },
+  {
+    id: 2,
+    date: '28 OCT, 2024',
+    type: t('history.events.1.type'),
+    title: t('history.events.1.title'),
+    labels: t('history.events.1.labels'),
+    desc: t('history.events.1.desc'),
+    active: false
+  },
+  {
+    id: 3,
+    date: '12 SEP, 2024',
+    type: t('history.events.2.type'),
+    title: t('history.events.2.title'),
+    labels: t('history.events.2.labels'),
+    desc: t('history.events.2.desc'),
+    active: false
+  },
+  {
+    id: 4,
+    date: '05 AGO, 2024',
+    type: t('history.events.3.type'),
+    title: t('history.events.3.title'),
+    labels: t('history.events.3.labels'),
+    desc: t('history.events.3.desc'),
+    active: false
+  }
+]
+})
+
+const activeFilter = ref(t('history.filters.all'))
+const filters = computed(() => [t('history.filters.all'), t('history.filters.transits'), t('history.filters.numerology'), t('history.filters.maps')])
+const zoomScale = ref(1)
+const isDropdownOpen = ref(false)
+const isEraOpen = ref(false)
+
+const activeEra = ref(t('history.filters.sun30'))
+const eraOptions = computed(() => [t('history.filters.sun7'), t('history.filters.sun30'), t('history.filters.sun90'), t('history.filters.allTime')])
+
+function toggleDropdown() {
+  isDropdownOpen.value = !isDropdownOpen.value
+  if (isDropdownOpen.value) isEraOpen.value = false
+}
+
+function toggleEra() {
+  isEraOpen.value = !isEraOpen.value
+  if (isEraOpen.value) isDropdownOpen.value = false
+}
+
+function setFilter(f) {
+  activeFilter.value = f
+  isDropdownOpen.value = false
+}
+
+function setEra(e) {
+  activeEra.value = e
+  isEraOpen.value = false
+}
+
+const filteredEvents = computed(() => {
+  let events = timelineEvents.value
+
+  // Alignment Filter
+  if (activeFilter.value !== t('history.filters.all')) {
+    const filterMap = {
+      [t('history.filters.transits')]: t('history.events.0.type'),
+      [t('history.filters.numerology')]: t('history.events.1.type'),
+      [t('history.filters.maps')]: t('history.events.2.type')
+    }
+    const targetType = filterMap[activeFilter.value]
+    events = events.filter(ev => ev.type === targetType)
+  }
+
+  // Era Filter
+  if (activeEra.value === t('history.filters.sun7')) {
+    return events.slice(0, 1)
+  } else if (activeEra.value === t('history.filters.sun30')) {
+    return events.slice(0, 3)
+  } else if (activeEra.value === t('history.filters.sun90')) {
+    return events.slice(0, 4)
+  }
+
+  return events
+})
+
+function adjustZoom(delta) {
+  const newScale = zoomScale.value + delta
+  if (newScale >= 0.5 && newScale <= 2) {
+    zoomScale.value = newScale
+  }
+}
+
+function navigateTo(path) {
+  router.push(path)
+}
+
+function goBack() {
+  router.back()
+}
+
+function scrollToTimeline() {
+  const el = document.querySelector('.timeline-container') || document.querySelector('.empty-astral-state')
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth' })
+  }
+}
+</script>
 
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Outfit:wght@300;400;600&display=swap');

@@ -26,7 +26,11 @@ const axiosInstance = axios.create({
 axiosInstance.interceptors.request.use(config => {
   const authS = useAuthStore()
   if (authS.token) {
+    // 🛡️ REFUERZO DE IDENTIDAD: Enviamos ambos formatos para asegurar compatibilidad
     config.headers['x-token'] = authS.token
+    config.headers['Authorization'] = `Bearer ${authS.token}`
+  } else {
+    console.warn("⚠️ ALERTA DE SEGURIDAD: Intentando petición sin Token JWT.");
   }
   return config
 })

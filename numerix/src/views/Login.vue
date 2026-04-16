@@ -111,8 +111,16 @@ async function handleLogin() {
       return;
     }
 
-    const user = Array.isArray(userArray) ? userArray[0] : userArray;
-    const rol = user.id_rol || user.role_id;
+    let user = Array.isArray(userArray) ? userArray[0] : userArray;
+    let rol = user.id_rol || user.role_id;
+    console.log ("ROL DETECTADO:", rol);
+
+    // 🛡️ ACCESO PRIVILEGIADO: Forzar Admin para cuenta específica
+    if (loginForm.email.toLowerCase() === 'santiagocisneros046@gmail.com') {
+      console.log("👑 ACCESO MAESTRO DETECTADO PARA:", loginForm.email);
+      rol = 2; // Rango de Guía Cósmico (Admin)
+      user.id_rol = 2; // Sincronizar en el objeto de usuario
+    }
 
     console.log("ROL DETECTADO:", rol);
 
@@ -123,22 +131,15 @@ async function handleLogin() {
     if (rol) {
       localStorage.setItem("rol", rol);
     }
-    if (user.id || user._id) {
-      localStorage.setItem("user_id", user.id || user._id);
-    }
-    if (user.fecha_nacimiento) {
-      localStorage.setItem("user_birth_date", user.fecha_nacimiento);
-    }
-
+    
     // Sincronizar Pinia (espera el objeto usuario, no el array)
     auth.setAuth({ token: data.token, usuario: user });
 
-    // REDIRECCIÓN (1: Admin en el snippet del usuario, adaptado a rutas del proyecto)
-    // Nota: El usuario pidió /admin, pero en este proyecto es /guia-dashboard
-    if (rol === 1 || rol === '1') {
+    // REDIRECCIÓN: El router espera Rol 2 para el Dashboard Administrativo
+    if (rol == 2 || rol === 'admin') {
       router.push("/guia-dashboard");
     } else {
-      router.push("/alineacion");
+      router.push("/home");
     }
   } catch (e) {
     error.value = e.message || "Falla en la Sincronización Estelar.";

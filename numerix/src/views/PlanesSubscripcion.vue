@@ -21,7 +21,7 @@ const plans = computed(() => {
   return [
     {
       id: 'lunar',
-      _id: '65f1a2b3c4d5e6f7890abc12', // 🆔 ObjectID real (o ejemplo)
+      _id: '69c4a1de947a181d05f503f8', // 🆔 ID Real MongoDB
       name: 'NIVEL LUNAR',
       code: t('subscriptions.plans.lunar.code'),
       price: '$12',
@@ -33,7 +33,7 @@ const plans = computed(() => {
     },
     {
       id: 'planetario',
-      _id: '65f1a2b3c4d5e6f7890abc23', // 🆔 Placeholder
+      _id: '69c4a1de947a181d05f503f9', // 🆔 ID Real MongoDB
       name: 'NIVEL PLANETARIO',
       code: t('subscriptions.plans.planetario.code'),
       price: '$34',
@@ -46,7 +46,7 @@ const plans = computed(() => {
     },
     {
       id: 'supernova',
-      _id: '65f1a2b3c4d5e6f7890abc34', // 🆔 Placeholder
+      _id: '69c4a1de947a181d05f503fa', // 🆔 ID Real MongoDB
       name: 'NIVEL SUPERNOVA',
       code: t('subscriptions.plans.supernova.code'),
       price: '$88',

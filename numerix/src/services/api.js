@@ -23,13 +23,18 @@ export const authService = {
    * POST /usuarios/register
    */
   register(nombre, email, password, fecha_nacimiento, id_rol) {
-    return httpClient.post("/usuarios/register", {
+    // Enviamos campos duplicados para asegurar compatibilidad con el backend
+    const payload = {
       nombre,
+      name: nombre, // Alias
       email,
       password,
       fecha_nacimiento,
       id_rol,
-    });
+      role: id_rol, // Alias
+    };
+    console.log("🚀 INTENTANDO REGISTRO CON PAYLOAD:", payload);
+    return httpClient.post("/usuarios/register", payload);
   },
 };
 
@@ -195,21 +200,37 @@ export const pagosService = {
 // ─────────────────────────────────────────────────────────
 export const mercadoPagoService = {
   /**
-   * Crear preferencia de pago (Checkout Pro)
+   * Crear preferencia de pago para el Checkout Pro (Mercado Pago)
    * POST /mercadopago/create-preference
-   * Body: { monto, titulo }
+   * Body: { id_usuario, id_plan, title, quantity, price }
    */
-  async crearPreferenciaPago(monto, titulo) {
-    console.log("🚀 INICIANDO PAGO:", { monto, titulo });
-    return await httpClient.post("/mercadopago/create-preference", { monto, titulo }, true);
+  async crearPreferenciaPago(paymentData) {
+    const { id_usuario, id_plan } = paymentData;
+
+    console.log("🚀 DATA ENVIADA A MP (MONGO STYLE):", paymentData);
+
+    // Validación de ObjectID (24 caracteres)
+    if (!id_usuario || id_usuario.length !== 24) {
+      console.error("❌ ERROR: ID usuario inválido:", id_usuario);
+      throw new Error("ID de usuario no válido para MongoDB/Mercado Pago");
+    }
+
+    if (!id_plan) {
+      console.error("❌ ERROR: ID plan faltante");
+      throw new Error("El nombre del plan (lunar, planetario, supernova) es requerido.");
+    }
+
+    const res = await httpClient.post("/mercadopago/create-preference", paymentData, true); 
+    return res; 
   },
 
   /**
-   * Verificar estado del pago al regresar de MP
-   * GET /mercadopago/verify-payment?payment_id=...
+   * Verificar estado del pago y activar usuario
+   * GET /mercadopago/verify-payment/:payment_id
    */
   async verificarPago(paymentId) {
-    return await httpClient.get(`/mercadopago/verify-payment?payment_id=${paymentId}`, true);
+    console.log("🔍 VERIFICANDO TRANSACCIÓN:", paymentId);
+    return await httpClient.get(`/mercadopago/verify-payment/${paymentId}`, true);
   },
 };
 

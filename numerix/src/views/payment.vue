@@ -194,9 +194,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
-import { authService, mercadoPagoService } from '../services/api.js';
+import { mercadoPagoService } from '../services/api.js';
 import { useAuthStore } from '../store/auth.js';
 
 const route = useRoute();
@@ -207,7 +207,15 @@ const titulo = ref("");
 const loading = ref(false);
 const error = ref("");
 
-// Sistema de Alertas (Bootstrap compatible con el diseño cósmico)
+// Formulario reactivo para la tarjeta visual
+const form = reactive({
+  name: '',
+  number: '',
+  expiry: '',
+  cvc: ''
+});
+
+// Sistema de Alertas
 const bootstrapAlert = ref({ show: false, message: '', type: 'danger' });
 
 function showAlert(message, type = 'danger') {
@@ -216,48 +224,84 @@ function showAlert(message, type = 'danger') {
 }
 
 onMounted(() => {
-  // 1. Obtener datos de la URL (Paso 1 de la Guía)
   if (route.query.monto) monto.value = Number(route.query.monto);
   if (route.query.titulo) titulo.value = route.query.titulo;
 
-  // Fallback si no hay query params
   if (!monto.value) {
     const stored = localStorage.getItem('selectedPlanTemp');
     if (stored) {
-      const plan = JSON.parse(stored);
-      monto.value = Number(String(plan.price).replace(/[^0-9.]/g, ''));
-      titulo.value = plan.name;
+      try {
+        const plan = JSON.parse(stored);
+        monto.value = Number(String(plan.price).replace(/[^0-9.]/g, ''));
+        titulo.value = plan.name;
+      } catch(e) {}
     }
   }
 });
 
-const iniciarPago = async () => {
-  if (monto.value <= 0) {
-    showAlert("Monto de pago no válido.", "warning");
-    return;
-  }
+// Funciones de formato requeridas por el template
+const formatCardNumber = (e) => {
+  let value = e.target.value.replace(/\D/g, '');
+  form.number = value.match(/.{1,4}/g)?.join(' ') || '';
+};
 
+const formatExpiry = (e) => {
+  let value = e.target.value.replace(/\D/g, '');
+  form.expiry = value.length >= 2 ? value.slice(0, 2) + '/' + value.slice(2, 4) : value;
+};
+
+const fillRandomData = () => {
+  form.name = "ELARA VANCE";
+  form.number = "4507 9900 0000 0000";
+  form.expiry = "12/29";
+  form.cvc = "123";
+};
+
+const iniciarPago = async () => {
   loading.value = true;
   error.value = '';
 
   try {
-    // 2. Llamar al servicio simplificado (Paso 4 de la Guía)
-    const response = await mercadoPagoService.crearPreferenciaPago(monto.value, titulo.value);
+    // 1. Obtener ID del Usuario (MongoDB _id)
+    const user = authStore.user;
+    if (!user || !user._id) {
+      error.value = "Error: No se encontró el ID de usuario. Por favor re-inicia sesión.";
+      return;
+    }
+
+    // 2. Obtener el Plan Seleccionado (MongoDB _id)
+    const storedPlan = localStorage.getItem('selectedPlanTemp');
+    if (!storedPlan) {
+      error.value = "Error: No se ha seleccionado un plan de suscripción.";
+      return;
+    }
+    const plan = JSON.parse(storedPlan);
+
+    // 3. Construir Payload por Nombres (lunar, planetario, supernova)
+    const data = {
+      id_usuario: user._id,           
+      id_plan: plan.id,               // 🏷️ USAMOS NOMBRE (lunar, planetario, supernova)
+      title: titulo.value || plan.name,
+      quantity: 1,
+      price: monto.value || Number(String(plan.price).replace(/[^0-9.]/g, '')),
+    };
+
+    // 4. Llamar al servicio con el payload manual completo
+    const response = await mercadoPagoService.crearPreferenciaPago(data);
     
     if (response.success) {
-      // 3. Redirigir a Mercado Pago (Paso 6 de la Guía)
       const redirectUrl = response.sandbox_init_point || response.init_point;
       if (redirectUrl) {
         window.location.href = redirectUrl;
       } else {
-        error.value = 'Error: No se recibió enlace de pago de MP.';
+        error.value = 'Error: No se recibió enlace de pago.';
       }
     } else {
       error.value = response.error || 'Error al procesar la preferencia.';
     }
   } catch (err) {
     console.error('Error al iniciar pago:', err);
-    error.value = `Error de conexión: ${err.message || 'Intente más tarde'}`;
+    error.value = `Error de conexión: ${err.message}`;
   } finally {
     loading.value = false;
   }
